@@ -1,0 +1,12 @@
+[package]
+name = "cef"
+version = "0.1.0"
+authors = ["Max Froehlich <max@mfro.me>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cef-sys = { path = "../cef-sys" }
+winapi = { version = "0.3.9", features = ["winuser"] }
+paste = "1.0.0"
