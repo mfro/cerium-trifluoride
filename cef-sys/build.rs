@@ -4,8 +4,14 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
-    let cef_path = std::env::var("CEF_PATH").expect("CEF_PATH must be specified");
-    let cef_path = PathBuf::from(cef_path);
+    let cef_path = match std::env::var("CEF_PATH") {
+        Ok(v) => PathBuf::from(v),
+        Err(_) => {
+            std::env::current_dir()
+            .unwrap()
+            .join("../cef_binary_85.3.1+g1306235+chromium-85.0.4183.83_windows64")
+        }
+    };
 
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=wrapper.h");

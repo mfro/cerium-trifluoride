@@ -25,6 +25,8 @@ pub use autogen::*;
 mod autogen {
     mod cef_types;
     pub use cef_types::*;
+
+    pub type CefURLParts = CefUrlparts;
 }
 
 pub trait IntoCef {

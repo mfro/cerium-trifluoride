@@ -1,6 +1,7 @@
 pub type CefServer = crate::include::base::CefProxy<cef_sys::cef_server_t>;
 #[allow(non_snake_case)]
 impl CefServer {
+  /// Returns the task runner for the dedicated server thread.
   pub fn get_task_runner(&mut self) -> Option<crate::include::CefTaskRunner> {
     unsafe {
       let ret = match self.raw.as_ref().get_task_runner {
@@ -10,6 +11,9 @@ impl CefServer {
       crate::include::CefTaskRunner::from_cef_own(ret)
     }
   }
+  /// Stop the server and shut down the dedicated server thread. See
+  /// CefServerHandler::OnServerCreated documentation for a description of
+  /// server lifespan.
   pub fn shutdown(&mut self) -> () {
     unsafe {
       let ret = match self.raw.as_ref().shutdown {
@@ -19,6 +23,10 @@ impl CefServer {
       ret
     }
   }
+  /// Returns true if the server is currently running and accepting incoming
+  /// connections. See CefServerHandler::OnServerCreated documentation for a
+  /// description of server lifespan. This method must be called on the dedicated
+  /// server thread.
   pub fn is_running(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().is_running {
@@ -28,6 +36,7 @@ impl CefServer {
       if ret == 0 { false } else { true }
     }
   }
+  /// Returns the server address including the port number.
   pub fn get_address(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_address {
@@ -37,6 +46,8 @@ impl CefServer {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns true if the server currently has a connection. This method must be
+  /// called on the dedicated server thread.
   pub fn has_connection(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().has_connection {
@@ -46,6 +57,8 @@ impl CefServer {
       if ret == 0 { false } else { true }
     }
   }
+  /// Returns true if |connection_id| represents a valid connection. This method
+  /// must be called on the dedicated server thread.
   pub fn is_valid_connection(&mut self, connection_id: i32) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().is_valid_connection {
@@ -55,6 +68,9 @@ impl CefServer {
       if ret == 0 { false } else { true }
     }
   }
+  /// Send an HTTP 404 "Not Found" response to the connection identified by
+  /// |connection_id|. The connection will be closed automatically after the
+  /// response is sent.
   pub fn send_http404response(&mut self, connection_id: i32) -> () {
     unsafe {
       let ret = match self.raw.as_ref().send_http404response {
@@ -64,6 +80,10 @@ impl CefServer {
       ret
     }
   }
+  /// Send an HTTP 500 "Internal Server Error" response to the connection
+  /// identified by |connection_id|. |error_message| is the associated error
+  /// message. The connection will be closed automatically after the response is
+  /// sent.
   pub fn send_http500response(&mut self, connection_id: i32, error_message: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().send_http500response {
@@ -73,6 +93,8 @@ impl CefServer {
       ret
     }
   }
+  /// Close the connection identified by |connection_id|. See SendHttpResponse
+  /// documentation for intended usage.
   pub fn close_connection(&mut self, connection_id: i32) -> () {
     unsafe {
       let ret = match self.raw.as_ref().close_connection {
@@ -90,16 +112,54 @@ impl CefServer {
 /// CefServer::CreateServer call to avoid thread safety issues in the
 /// CefServerHandler implementation.
 #[allow(non_snake_case)]
+#[allow(unused_variables)]
 pub trait ServerHandler {
+  /// Called when |server| is created. If the server was started successfully
+  /// then CefServer::IsRunning will return true. The server will continue
+  /// running until CefServer::Shutdown is called, after which time
+  /// OnServerDestroyed will be called. If the server failed to start then
+  /// OnServerDestroyed will be called immediately after this method returns.
   fn on_server_created(&mut self, server: crate::include::CefServer) -> () { Default::default() }
+  /// Called when |server| is destroyed. The server thread will be stopped after
+  /// this method returns. The client should release any references to |server|
+  /// when this method is called. See OnServerCreated documentation for a
+  /// description of server lifespan.
   fn on_server_destroyed(&mut self, server: crate::include::CefServer) -> () { Default::default() }
+  /// Called when a client connects to |server|. |connection_id| uniquely
+  /// identifies the connection. Each call to this method will have a matching
+  /// call to OnClientDisconnected.
   fn on_client_connected(&mut self, server: crate::include::CefServer, connection_id: i32) -> () { Default::default() }
+  /// Called when a client disconnects from |server|. |connection_id| uniquely
+  /// identifies the connection. The client should release any data associated
+  /// with |connection_id| when this method is called and |connection_id| should
+  /// no longer be passed to CefServer methods. Disconnects can originate from
+  /// either the client or the server. For example, the server will disconnect
+  /// automatically after a CefServer::SendHttpXXXResponse method is called.
   fn on_client_disconnected(&mut self, server: crate::include::CefServer, connection_id: i32) -> () { Default::default() }
+  /// Called when |server| receives an HTTP request. |connection_id| uniquely
+  /// identifies the connection, |client_address| is the requesting IPv4 or IPv6
+  /// client address including port number, and |request| contains the request
+  /// contents (URL, method, headers and optional POST data). Call CefServer
+  /// methods either synchronously or asynchronusly to send a response.
   fn on_http_request(&mut self, server: crate::include::CefServer, connection_id: i32, client_address: &crate::include::internal::CefString, request: crate::include::CefRequest) -> () { Default::default() }
+  /// Called when |server| receives a WebSocket request. |connection_id| uniquely
+  /// identifies the connection, |client_address| is the requesting IPv4 or
+  /// IPv6 client address including port number, and |request| contains the
+  /// request contents (URL, method, headers and optional POST data). Execute
+  /// |callback| either synchronously or asynchronously to accept or decline the
+  /// WebSocket connection. If the request is accepted then OnWebSocketConnected
+  /// will be called after the WebSocket has connected and incoming messages will
+  /// be delivered to the OnWebSocketMessage callback. If the request is declined
+  /// then the client will be disconnected and OnClientDisconnected will be
+  /// called. Call the CefServer::SendWebSocketMessage method after receiving the
+  /// OnWebSocketConnected callback to respond with WebSocket messages.
   fn on_web_socket_request(&mut self, server: crate::include::CefServer, connection_id: i32, client_address: &crate::include::internal::CefString, request: crate::include::CefRequest, callback: crate::include::CefCallback) -> () { Default::default() }
+  /// Called after the client has accepted the WebSocket connection for |server|
+  /// and |connection_id| via the OnWebSocketRequest callback. See
+  /// OnWebSocketRequest documentation for intended usage.
   fn on_web_socket_connected(&mut self, server: crate::include::CefServer, connection_id: i32) -> () { Default::default() }
 }
-define_refcounted!(ServerHandler, server_handler, on_server_created,on_server_destroyed,on_client_connected,on_client_disconnected,on_http_request,on_web_socket_request,on_web_socket_connected,);
+define_refcounted!(ServerHandler, CefServerHandler, cef_server_handler_t, on_server_created: cef_server_handler_t_on_server_created,on_server_destroyed: cef_server_handler_t_on_server_destroyed,on_client_connected: cef_server_handler_t_on_client_connected,on_client_disconnected: cef_server_handler_t_on_client_disconnected,on_http_request: cef_server_handler_t_on_http_request,on_web_socket_request: cef_server_handler_t_on_web_socket_request,on_web_socket_connected: cef_server_handler_t_on_web_socket_connected,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_server_handler_t_on_server_created(_self: *mut cef_sys::cef_server_handler_t, server: *mut cef_sys::cef_server_t) -> () {
   let ret = CefServerHandler::from_cef(_self, true).get().on_server_created(crate::include::CefServer::from_cef_own(server).unwrap(),);

@@ -133,7 +133,7 @@ class type_refptr(type_base):
   def rust_to_extern(self, name):
     return f'{self.rust_type}::to_cef_own({name})'
 
-class type_option_refptr(type_base):
+class type_refptr_option(type_base):
   def __init__(self, raw):
     super().__init__()
 
@@ -213,7 +213,7 @@ class type_ref_string(type_base):
   def rust_parameter_to_extern_parameter(self, name):
     return f'crate::include::internal::IntoCef::into_cef({name})'
 
-class type_option_ref_string(type_base):
+class type_ref_string_option(type_base):
   def __init__(self):
     super().__init__()
 
@@ -268,10 +268,24 @@ class type_ref_struct(type_base):
 
   def extern_to_rust(self, name):
     return f'&*({name} as *const _)'
-    #
 
   def rust_to_extern(self, name):
-    return f'&{name}.raw'
+    return f'{name} as *const _ as *const _'
+
+class type_ref_struct_option(type_base):
+  def __init__(self, raw_name):
+    super().__init__()
+
+    self.inner = type_ref_struct(raw_name)
+
+    self.rust_type = f'Option<{self.inner.rust_type}>'
+    self.extern_type = f'{self.inner.extern_type}'
+
+  def extern_to_rust(self, name):
+    return f'if {name}.is_null() {{ None }} else {{ Some({self.inner.extern_to_rust(name)}) }}'
+
+  def rust_to_extern(self, name):
+    return f'match {name} {{ Some({name}) => {self.inner.rust_to_extern(name)}, None => std::ptr::null_mut() }}'
 
 class type_mut_struct(type_base):
   def __init__(self, raw_name):
@@ -287,7 +301,7 @@ class type_mut_struct(type_base):
     # sorry
 
   def rust_to_extern(self, name):
-    return f'&mut {name}.raw'
+    return f'{name} as *mut _ as *mut _'
 
 class type_ref_list_string(type_base):
   def __init__(self):
@@ -389,6 +403,21 @@ class type_mut_primitive(type_base):
   def rust_to_extern(self, name):
     return f'{name}'
 
+class type_mut_primitive_option(type_base):
+  def __init__(self, ty):
+    super().__init__()
+
+    self.inner = type_primitive(ty)
+
+    self.rust_type = f'Option<&mut {self.inner.rust_type}>'
+    self.extern_type = f'*mut {self.inner.extern_type}'
+
+  def extern_to_rust(self, name):
+    return f'if {name}.is_null() {{ None }} else {{ Some(&mut *{name}) }}'
+
+  def rust_to_extern(self, name):
+    return f'match {name} {{ Some({name}) => {name}, None => std::ptr::null_mut() }}'
+
 class type_primitive(type_base):
   def __init__(self, ty):
     super().__init__()
@@ -404,6 +433,7 @@ class type_primitive(type_base):
 
 def generate_comment(writer, lines):
   for line in lines:
+    if line is None: continue
     line = line.strip()
     if line == '/': continue
     writer.write_line(f'/// {line}')
@@ -556,6 +586,87 @@ def generate_types(writer, contents):
 
   print(structures_copy)
 
+def generate_static_func(writer, func):
+  if func.has_attrib('capi_name'):
+    func_name = func.get_attrib('capi_name')
+  else:
+    func_name = get_c_func_name(func.get_name())
+
+  extern_name = func.get_capi_name()
+
+  typedefs = []
+  if hasattr(func, 'parent'): typedefs.extend(func.parent.get_typedefs())
+  if hasattr(func.parent, 'parent'): typedefs.extend(func.parent.parent.get_typedefs())
+
+  arguments = func.get_arguments()
+  arg_types = [parse_type(typedefs, x.get_type()) for x in arguments]
+
+  translations = []
+
+  while len(arg_types) > 0:
+    arg = arguments[-len(arg_types)]
+    translated = translate_arguments(arg_types, is_optional(arg, func))
+    translations.append((map_identifier(arg.get_name()), translated))
+
+  rettype = parse_type(typedefs, func.get_retval().get_type())
+  if rettype[0] == 'primitive' and rettype[1] == 'void':
+    retarg = type_unit()
+  else:
+    retarg = translate_type(rettype, True)
+
+  generate_comment(writer, func.get_comment())
+  writer.write_line(f'#[allow(non_snake_case)]')
+  writer.write(f'pub fn {func_name}(')
+
+  for (name, arg) in translations:
+    writer.write(f'{name}: {arg.rust_type}, ')
+
+  writer.write_line(f') -> {retarg.rust_type} {{')
+  writer.indent(+1)
+  writer.write_line('unsafe {')
+  writer.indent(+1)
+
+  for (name, arg) in translations:
+    if not arg.rust_to_extern_prepare(name): continue
+    if isinstance(arg.rust_to_extern_prepare(name), str):
+      writer.write_line(f'{arg.rust_to_extern_prepare(name)}')
+    else:
+      label = 0
+      for mapping in arg.rust_to_extern_prepare(name):
+        writer.write_line(f'{mapping}')
+        label += 1
+
+  writer.write(f'let ret = {cef_binding_ns}::{extern_name}(')
+
+  for (name, arg) in translations:
+    if isinstance(arg.extern_type, str):
+      writer.write(f'{arg.rust_parameter_to_extern_parameter(name)},')
+    else:
+      for mapping in arg.rust_parameter_to_extern_parameter(name):
+        writer.write(f'{mapping},')
+
+  writer.write_line(');')
+
+  for (name, arg) in translations:
+    if not arg.rust_to_extern_restore(name): continue
+    if isinstance(arg.rust_to_extern_restore(name), str):
+      writer.write_line(f'{arg.rust_to_extern_restore(name)}')
+    else:
+      label = 0
+      for mapping in arg.rust_to_extern_restore(name):
+        writer.write_line(f'{mapping}')
+        label += 1
+
+  if retarg.extern_return_to_rust_return('ret'):
+    writer.write_line(f'{retarg.extern_return_to_rust_return("ret")}')
+  else:
+    writer.write_line('ret')
+
+  writer.indent(-1)
+  writer.write_line(f'}}')
+  writer.indent(-1)
+  writer.write_line(f'}}')
+
 def generate_class(writer, cls):
   c_name = get_c_type_name(cls.get_name())
   trait_name = cls.get_name().replace('Cef', '')
@@ -565,11 +676,15 @@ def generate_class(writer, cls):
   writer.write_line(f'impl {cls.get_name()} {{')
   writer.indent(+1)
 
-  func_names = set()
+  for func in cls.get_static_funcs():
+    try:
+      generate_static_func(writer, func)
+    except RuntimeError as e:
+      print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
 
   for func in cls.get_virtual_funcs():
     try:
-      generate_class_func(writer, func, func_names)
+      generate_class_func(writer, func)
     except RuntimeError as e:
       print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
 
@@ -578,7 +693,7 @@ def generate_class(writer, cls):
 
   return ''
 
-def generate_class_func(writer, func, func_names):
+def generate_class_func(writer, func):
   if func.has_attrib('capi_name'):
     func_name = func.get_attrib('capi_name')
   else:
@@ -601,6 +716,7 @@ def generate_class_func(writer, func, func_names):
   else:
     retarg = translate_type(rettype, True)
 
+  generate_comment(writer, func.get_comment())
   writer.write(f'pub fn {func_name}(&mut self')
 
   for (name, arg) in translations:
@@ -666,15 +782,23 @@ def generate_interface(main_writer, cls):
     if line == '/': continue
     main_writer.write_line('/// ' + line)
 
-  trait_name = cls.get_name().replace('Cef', '')
-  c_name = get_c_func_name(trait_name)
+  object_name = cls.get_name()
+  trait_name = object_name.replace('Cef', '')
+  c_name = get_c_type_name(object_name)
 
   main_writer.write_line(f'#[allow(non_snake_case)]')
+  main_writer.write_line(f'#[allow(unused_variables)]')
   main_writer.write_line(f'pub trait {trait_name} {{')
   main_writer.indent(+1)
 
+  for func in cls.get_static_funcs():
+    try:
+      generate_static_func(main_writer, func)
+    except RuntimeError as e:
+      print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
+
   macro_impl = writer()
-  macro_impl.write(f'define_refcounted!({trait_name}, {c_name}, ')
+  macro_impl.write(f'define_refcounted!({trait_name}, {object_name}, {c_name}, ')
 
   unsafe_impl = writer()
 
@@ -715,8 +839,9 @@ def generate_interface_func(trait_impl, unsafe_impl, macro_impl, func):
   else:
     retarg = translate_type(rettype, True)
 
-  macro_impl.write(f'{func_name},')
+  macro_impl.write(f'{func_name}: {iface_name}_{func_name},')
 
+  generate_comment(trait_impl, func.get_comment())
   trait_impl.write(f'fn {func_name}(&mut self')
 
   for (name, arg) in translations:
@@ -813,40 +938,47 @@ def translate_type(ty, optional = False):
     if ty[1][1] == 'CefBaseRefCounted':
       raise RuntimeError(f'unsupported type: {ty[1]}')
 
-    if optional: return type_option_refptr(ty[1])
+    if optional: return type_refptr_option(ty[1])
     return type_refptr(ty[1])
 
   # ?? &mut CefObject
   elif is_ref_or_ptr(ty) and ty[1][0] == 'refptr':
+    if optional: print(f'optional {ty}')
     return type_mut_refptr(ty[1][1])
 
   # ?? &mut CefObject
   elif ty[0] == 'rawptr':
+    if optional: print(f'optional {ty}')
     return type_rawptr(ty[1])
 
   # CefString
   elif ty[0] == 'string':
+    if optional: print(f'optional {ty}')
     return type_string()
 
   # &mut CefString
   elif is_ref_or_ptr(ty) and ty[1][0] == 'string':
+    if optional: print(f'optional {ty}')
     return type_mut_string()
 
   # &CefString
   elif is_ref_or_ptr(ty) and ty[1][0] == 'const' and ty[1][1][0] == 'string':
-    if optional: return type_option_ref_string()
+    if optional: return type_ref_string_option()
     return type_ref_string()
 
   # CefStruct
   elif ty[0] == 'struct':
+    if optional: print(f'optional {ty}')
     return type_struct(ty[1])
 
   # &mut CefStruct
   elif is_ref_or_ptr(ty) and ty[1][0] == 'struct':
+    if optional: print(f'optional {ty}')
     return type_mut_struct(ty[1][1])
 
   # &CefStruct
   elif is_ref_or_ptr(ty) and ty[1][0] == 'const' and ty[1][1][0] == 'struct':
+    if optional: return type_ref_struct_option(ty[1][1][1])
     return type_ref_struct(ty[1][1][1])
 
   # &mut CefStringList or &mut [_]
@@ -870,12 +1002,14 @@ def translate_type(ty, optional = False):
   # &CefStringList or &[_]
   elif is_ref_or_ptr(ty) and ty[1][0] == 'const' and ty[1][1][0] == 'vector':
     if ty[1][1][1][0] == 'string':
+      if optional: print(f'optional {ty}')
       return type_ref_list_string()
 
     element = translate_type(ty[1][1][1])
     print(f'list: {ty[1][1][1]}')
     print(f'      {element.extern_to_rust_prepare("v")}')
 
+    if optional: print(f'optional {ty}')
     return type_ref_list(element)
 
   # &mut CefStringMap
@@ -928,18 +1062,30 @@ def translate_type(ty, optional = False):
 
   # &mut _ - primitive out bool
   elif is_ref_or_ptr(ty) and ty[1][0] == 'primitive' and ty[1][1] == 'bool':
+    if optional: print(f'optional {ty}')
     return type_mut_bool()
 
   # bool
   elif ty[0] == 'primitive' and ty[1] == 'bool':
+    if optional: print(f'optional {ty}')
     return type_bool()
+
+  # # &mut _ - primitive out bool
+  # elif is_ref_or_ptr(ty) and ty[1][0] == 'primitive' and ty[1][1] == 'void':
+  #   return type_mut_primitive(ty[1][2])
+
+  # # bool
+  # elif ty[0] == 'primitive' and ty[1] == 'void':
+  #   return type_primitive(ty[2])
 
   # &mut _ - primitive out parameter
   elif is_ref_or_ptr(ty) and ty[1][0] == 'primitive':
+    if optional: return type_mut_primitive_option(ty[1][2])
     return type_mut_primitive(ty[1][2])
 
   # _ - primitive
   elif ty[0] == 'primitive':
+    if optional: print(f'optional {ty}')
     return type_primitive(ty[2])
 
   else: raise RuntimeError(f'unsupported type {ty}')
@@ -1073,10 +1219,8 @@ def map_identifier(ident):
   return ident
 
 def is_optional(arg, func):
-  for x, y in func.get_attribs().items():
-    if x == 'optional_param' and y == arg.get_name():
-      return True
-  return False
+  optional = func.get_attrib_list('optional_param')
+  return optional and arg.get_name() in optional
 
 # the rootdir option is required
 if options.rootdir is None:
@@ -1133,6 +1277,13 @@ for filename in filenames:
       generate_class(w, cls)
     else:
       generate_interface(w, cls)
+
+  for func in header.get_funcs(filename):
+    try:
+      generate_static_func(w, func)
+    except RuntimeError as e:
+      print(f'skipping {func.get_name()}: {e}')
+
   modname = filename.replace('.h', '')
   with open(os.path.join(output_include_dir, modname + '.rs'), 'w') as x:
     x.write(w.result)

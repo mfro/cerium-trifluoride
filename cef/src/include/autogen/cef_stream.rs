@@ -1,14 +1,24 @@
 /// Interface the client can implement to provide a custom stream reader. The
 /// methods of this class may be called on any thread.
 #[allow(non_snake_case)]
+#[allow(unused_variables)]
 pub trait ReadHandler {
+  /// Read raw binary data.
   fn read(&mut self, ptr: &mut std::os::raw::c_void, size: u64, n: u64) -> u64 { Default::default() }
+  /// Seek to the specified offset position. |whence| may be any one of
+  /// SEEK_CUR, SEEK_END or SEEK_SET. Return zero on success and non-zero on
+  /// failure.
   fn seek(&mut self, offset: i64, whence: i32) -> i32 { Default::default() }
+  /// Return the current offset position.
   fn tell(&mut self) -> i64 { Default::default() }
+  /// Return non-zero if at end of file.
   fn eof(&mut self) -> i32 { Default::default() }
+  /// Return true if this handler performs work like accessing the file system
+  /// which may block. Used as a hint for determining the thread to access the
+  /// handler from.
   fn may_block(&mut self) -> bool { Default::default() }
 }
-define_refcounted!(ReadHandler, read_handler, read,seek,tell,eof,may_block,);
+define_refcounted!(ReadHandler, CefReadHandler, cef_read_handler_t, read: cef_read_handler_t_read,seek: cef_read_handler_t_seek,tell: cef_read_handler_t_tell,eof: cef_read_handler_t_eof,may_block: cef_read_handler_t_may_block,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_read_handler_t_read(_self: *mut cef_sys::cef_read_handler_t, ptr: *mut std::os::raw::c_void, size: u64, n: u64) -> u64 {
   let ret = CefReadHandler::from_cef(_self, true).get().read(&mut *ptr,size,n,);
@@ -37,6 +47,31 @@ unsafe extern "C" fn cef_read_handler_t_may_block(_self: *mut cef_sys::cef_read_
 pub type CefStreamReader = crate::include::base::CefProxy<cef_sys::cef_stream_reader_t>;
 #[allow(non_snake_case)]
 impl CefStreamReader {
+  /// Create a new CefStreamReader object from a file.
+  #[allow(non_snake_case)]
+  pub fn create_for_file(fileName: &crate::include::internal::CefString, ) -> Option<crate::include::CefStreamReader> {
+    unsafe {
+      let ret = cef_sys::cef_stream_reader_create_for_file(crate::include::internal::IntoCef::into_cef(fileName),);
+      crate::include::CefStreamReader::from_cef_own(ret)
+    }
+  }
+  /// Create a new CefStreamReader object from data.
+  #[allow(non_snake_case)]
+  pub fn create_for_data(data: &mut std::os::raw::c_void, size: u64, ) -> Option<crate::include::CefStreamReader> {
+    unsafe {
+      let ret = cef_sys::cef_stream_reader_create_for_data(data,size,);
+      crate::include::CefStreamReader::from_cef_own(ret)
+    }
+  }
+  /// Create a new CefStreamReader object from a custom handler.
+  #[allow(non_snake_case)]
+  pub fn create_for_handler(handler: crate::include::CefReadHandler, ) -> Option<crate::include::CefStreamReader> {
+    unsafe {
+      let ret = cef_sys::cef_stream_reader_create_for_handler(crate::include::CefReadHandler::to_cef_own(handler),);
+      crate::include::CefStreamReader::from_cef_own(ret)
+    }
+  }
+  /// Read raw binary data.
   pub fn read(&mut self, ptr: &mut std::os::raw::c_void, size: u64, n: u64) -> u64 {
     unsafe {
       let ret = match self.raw.as_ref().read {
@@ -46,6 +81,9 @@ impl CefStreamReader {
       ret
     }
   }
+  /// Seek to the specified offset position. |whence| may be any one of
+  /// SEEK_CUR, SEEK_END or SEEK_SET. Returns zero on success and non-zero on
+  /// failure.
   pub fn seek(&mut self, offset: i64, whence: i32) -> i32 {
     unsafe {
       let ret = match self.raw.as_ref().seek {
@@ -55,6 +93,7 @@ impl CefStreamReader {
       ret
     }
   }
+  /// Return the current offset position.
   pub fn tell(&mut self) -> i64 {
     unsafe {
       let ret = match self.raw.as_ref().tell {
@@ -64,6 +103,7 @@ impl CefStreamReader {
       ret
     }
   }
+  /// Return non-zero if at end of file.
   pub fn eof(&mut self) -> i32 {
     unsafe {
       let ret = match self.raw.as_ref().eof {
@@ -73,6 +113,9 @@ impl CefStreamReader {
       ret
     }
   }
+  /// Returns true if this reader performs work like accessing the file system
+  /// which may block. Used as a hint for determining the thread to access the
+  /// reader from.
   pub fn may_block(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().may_block {
@@ -86,13 +129,22 @@ impl CefStreamReader {
 /// Interface the client can implement to provide a custom stream writer. The
 /// methods of this class may be called on any thread.
 #[allow(non_snake_case)]
+#[allow(unused_variables)]
 pub trait WriteHandler {
+  /// Seek to the specified offset position. |whence| may be any one of
+  /// SEEK_CUR, SEEK_END or SEEK_SET. Return zero on success and non-zero on
+  /// failure.
   fn seek(&mut self, offset: i64, whence: i32) -> i32 { Default::default() }
+  /// Return the current offset position.
   fn tell(&mut self) -> i64 { Default::default() }
+  /// Flush the stream.
   fn flush(&mut self) -> i32 { Default::default() }
+  /// Return true if this handler performs work like accessing the file system
+  /// which may block. Used as a hint for determining the thread to access the
+  /// handler from.
   fn may_block(&mut self) -> bool { Default::default() }
 }
-define_refcounted!(WriteHandler, write_handler, seek,tell,flush,may_block,);
+define_refcounted!(WriteHandler, CefWriteHandler, cef_write_handler_t, seek: cef_write_handler_t_seek,tell: cef_write_handler_t_tell,flush: cef_write_handler_t_flush,may_block: cef_write_handler_t_may_block,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_write_handler_t_seek(_self: *mut cef_sys::cef_write_handler_t, offset: i64, whence: i32) -> i32 {
   let ret = CefWriteHandler::from_cef(_self, true).get().seek(offset,whence,);
@@ -116,6 +168,25 @@ unsafe extern "C" fn cef_write_handler_t_may_block(_self: *mut cef_sys::cef_writ
 pub type CefStreamWriter = crate::include::base::CefProxy<cef_sys::cef_stream_writer_t>;
 #[allow(non_snake_case)]
 impl CefStreamWriter {
+  /// Create a new CefStreamWriter object for a file.
+  #[allow(non_snake_case)]
+  pub fn create_for_file(fileName: &crate::include::internal::CefString, ) -> Option<crate::include::CefStreamWriter> {
+    unsafe {
+      let ret = cef_sys::cef_stream_writer_create_for_file(crate::include::internal::IntoCef::into_cef(fileName),);
+      crate::include::CefStreamWriter::from_cef_own(ret)
+    }
+  }
+  /// Create a new CefStreamWriter object for a custom handler.
+  #[allow(non_snake_case)]
+  pub fn create_for_handler(handler: crate::include::CefWriteHandler, ) -> Option<crate::include::CefStreamWriter> {
+    unsafe {
+      let ret = cef_sys::cef_stream_writer_create_for_handler(crate::include::CefWriteHandler::to_cef_own(handler),);
+      crate::include::CefStreamWriter::from_cef_own(ret)
+    }
+  }
+  /// Seek to the specified offset position. |whence| may be any one of
+  /// SEEK_CUR, SEEK_END or SEEK_SET. Returns zero on success and non-zero on
+  /// failure.
   pub fn seek(&mut self, offset: i64, whence: i32) -> i32 {
     unsafe {
       let ret = match self.raw.as_ref().seek {
@@ -125,6 +196,7 @@ impl CefStreamWriter {
       ret
     }
   }
+  /// Return the current offset position.
   pub fn tell(&mut self) -> i64 {
     unsafe {
       let ret = match self.raw.as_ref().tell {
@@ -134,6 +206,7 @@ impl CefStreamWriter {
       ret
     }
   }
+  /// Flush the stream.
   pub fn flush(&mut self) -> i32 {
     unsafe {
       let ret = match self.raw.as_ref().flush {
@@ -143,6 +216,9 @@ impl CefStreamWriter {
       ret
     }
   }
+  /// Returns true if this writer performs work like accessing the file system
+  /// which may block. Used as a hint for determining the thread to access the
+  /// writer from.
   pub fn may_block(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().may_block {

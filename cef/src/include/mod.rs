@@ -1,5 +1,5 @@
 #[macro_use]
-pub mod base;
+pub(crate) mod base;
 
 mod internal;
 pub use internal::*;

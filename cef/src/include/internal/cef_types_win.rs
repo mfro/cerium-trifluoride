@@ -5,14 +5,14 @@ pub type CefPlatformThreadId = cef_sys::DWORD;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct MainArgs {
+pub struct CefMainArgs {
     pub raw: cef_sys::cef_main_args_t,
 }
 
-impl MainArgs {
-    pub unsafe fn new(instance: *mut cef_sys::HINSTANCE__) -> MainArgs {
+impl CefMainArgs {
+    pub unsafe fn new(instance: *mut cef_sys::HINSTANCE__) -> CefMainArgs {
         let raw = cef_sys::cef_main_args_t { instance };
-        MainArgs { raw }
+        CefMainArgs { raw }
     }
 }
 

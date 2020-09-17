@@ -1,6 +1,8 @@
 pub type CefRunContextMenuCallback = crate::include::base::CefProxy<cef_sys::cef_run_context_menu_callback_t>;
 #[allow(non_snake_case)]
 impl CefRunContextMenuCallback {
+  /// Complete context menu display by selecting the specified |command_id| and
+  /// |event_flags|.
   pub fn cont(&mut self, command_id: i32, event_flags: crate::include::internal::CefEventFlags) -> () {
     unsafe {
       let ret = match self.raw.as_ref().cont {
@@ -10,6 +12,7 @@ impl CefRunContextMenuCallback {
       ret
     }
   }
+  /// Cancel context menu display.
   pub fn cancel(&mut self) -> () {
     unsafe {
       let ret = match self.raw.as_ref().cancel {
@@ -23,13 +26,34 @@ impl CefRunContextMenuCallback {
 /// Implement this interface to handle context menu events. The methods of this
 /// class will be called on the UI thread.
 #[allow(non_snake_case)]
+#[allow(unused_variables)]
 pub trait ContextMenuHandler {
+  /// Called before a context menu is displayed. |params| provides information
+  /// about the context menu state. |model| initially contains the default
+  /// context menu. The |model| can be cleared to show no context menu or
+  /// modified to show a custom menu. Do not keep references to |params| or
+  /// |model| outside of this callback.
   fn on_before_context_menu(&mut self, browser: crate::include::CefBrowser, frame: crate::include::CefFrame, params: crate::include::CefContextMenuParams, model: crate::include::CefMenuModel) -> () { Default::default() }
+  /// Called to allow custom display of the context menu. |params| provides
+  /// information about the context menu state. |model| contains the context menu
+  /// model resulting from OnBeforeContextMenu. For custom display return true
+  /// and execute |callback| either synchronously or asynchronously with the
+  /// selected command ID. For default display return false. Do not keep
+  /// references to |params| or |model| outside of this callback.
   fn run_context_menu(&mut self, browser: crate::include::CefBrowser, frame: crate::include::CefFrame, params: crate::include::CefContextMenuParams, model: crate::include::CefMenuModel, callback: crate::include::CefRunContextMenuCallback) -> bool { Default::default() }
+  /// Called to execute a command selected from the context menu. Return true if
+  /// the command was handled or false for the default implementation. See
+  /// cef_menu_id_t for the command ids that have default implementations. All
+  /// user-defined command ids should be between MENU_ID_USER_FIRST and
+  /// MENU_ID_USER_LAST. |params| will have the same values as what was passed to
+  /// OnBeforeContextMenu(). Do not keep a reference to |params| outside of this
+  /// callback.
   fn on_context_menu_command(&mut self, browser: crate::include::CefBrowser, frame: crate::include::CefFrame, params: crate::include::CefContextMenuParams, command_id: i32, event_flags: crate::include::internal::CefEventFlags) -> bool { Default::default() }
+  /// Called when the context menu is dismissed irregardless of whether the menu
+  /// was empty or a command was selected.
   fn on_context_menu_dismissed(&mut self, browser: crate::include::CefBrowser, frame: crate::include::CefFrame) -> () { Default::default() }
 }
-define_refcounted!(ContextMenuHandler, context_menu_handler, on_before_context_menu,run_context_menu,on_context_menu_command,on_context_menu_dismissed,);
+define_refcounted!(ContextMenuHandler, CefContextMenuHandler, cef_context_menu_handler_t, on_before_context_menu: cef_context_menu_handler_t_on_before_context_menu,run_context_menu: cef_context_menu_handler_t_run_context_menu,on_context_menu_command: cef_context_menu_handler_t_on_context_menu_command,on_context_menu_dismissed: cef_context_menu_handler_t_on_context_menu_dismissed,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_context_menu_handler_t_on_before_context_menu(_self: *mut cef_sys::cef_context_menu_handler_t, browser: *mut cef_sys::cef_browser_t, frame: *mut cef_sys::cef_frame_t, params: *mut cef_sys::cef_context_menu_params_t, model: *mut cef_sys::cef_menu_model_t) -> () {
   let ret = CefContextMenuHandler::from_cef(_self, true).get().on_before_context_menu(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),crate::include::CefContextMenuParams::from_cef_own(params).unwrap(),crate::include::CefMenuModel::from_cef_own(model).unwrap(),);
@@ -53,6 +77,8 @@ unsafe extern "C" fn cef_context_menu_handler_t_on_context_menu_dismissed(_self:
 pub type CefContextMenuParams = crate::include::base::CefProxy<cef_sys::cef_context_menu_params_t>;
 #[allow(non_snake_case)]
 impl CefContextMenuParams {
+  /// Returns the X coordinate of the mouse where the context menu was invoked.
+  /// Coords are relative to the associated RenderView's origin.
   pub fn get_xcoord(&mut self) -> i32 {
     unsafe {
       let ret = match self.raw.as_ref().get_xcoord {
@@ -62,6 +88,8 @@ impl CefContextMenuParams {
       ret
     }
   }
+  /// Returns the Y coordinate of the mouse where the context menu was invoked.
+  /// Coords are relative to the associated RenderView's origin.
   pub fn get_ycoord(&mut self) -> i32 {
     unsafe {
       let ret = match self.raw.as_ref().get_ycoord {
@@ -71,6 +99,8 @@ impl CefContextMenuParams {
       ret
     }
   }
+  /// Returns flags representing the type of node that the context menu was
+  /// invoked on.
   pub fn get_type_flags(&mut self) -> crate::include::internal::CefContextMenuTypeFlags {
     unsafe {
       let ret = match self.raw.as_ref().get_type_flags {
@@ -80,6 +110,8 @@ impl CefContextMenuParams {
       ret.into()
     }
   }
+  /// Returns the URL of the link, if any, that encloses the node that the
+  /// context menu was invoked on.
   pub fn get_link_url(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_link_url {
@@ -89,6 +121,8 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns the link URL, if any, to be used ONLY for "copy link address". We
+  /// don't validate this field in the frontend process.
   pub fn get_unfiltered_link_url(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_unfiltered_link_url {
@@ -98,6 +132,8 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns the source URL, if any, for the element that the context menu was
+  /// invoked on. Example of elements with source URLs are img, audio, and video.
   pub fn get_source_url(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_source_url {
@@ -107,6 +143,8 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns true if the context menu was invoked on an image which has
+  /// non-empty contents.
   pub fn has_image_contents(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().has_image_contents {
@@ -116,6 +154,8 @@ impl CefContextMenuParams {
       if ret == 0 { false } else { true }
     }
   }
+  /// Returns the title text or the alt text if the context menu was invoked on
+  /// an image.
   pub fn get_title_text(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_title_text {
@@ -125,6 +165,7 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns the URL of the top level page that the context menu was invoked on.
   pub fn get_page_url(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_page_url {
@@ -134,6 +175,7 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns the URL of the subframe that the context menu was invoked on.
   pub fn get_frame_url(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_frame_url {
@@ -143,6 +185,8 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns the character encoding of the subframe that the context menu was
+  /// invoked on.
   pub fn get_frame_charset(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_frame_charset {
@@ -152,6 +196,7 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns the type of context node that the context menu was invoked on.
   pub fn get_media_type(&mut self) -> crate::include::internal::CefContextMenuMediaType {
     unsafe {
       let ret = match self.raw.as_ref().get_media_type {
@@ -161,6 +206,8 @@ impl CefContextMenuParams {
       ret.into()
     }
   }
+  /// Returns flags representing the actions supported by the media element, if
+  /// any, that the context menu was invoked on.
   pub fn get_media_state_flags(&mut self) -> crate::include::internal::CefContextMenuMediaStateFlags {
     unsafe {
       let ret = match self.raw.as_ref().get_media_state_flags {
@@ -170,6 +217,8 @@ impl CefContextMenuParams {
       ret.into()
     }
   }
+  /// Returns the text of the selection, if any, that the context menu was
+  /// invoked on.
   pub fn get_selection_text(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_selection_text {
@@ -179,6 +228,8 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns the text of the misspelled word, if any, that the context menu was
+  /// invoked on.
   pub fn get_misspelled_word(&mut self) -> crate::include::internal::CefString {
     unsafe {
       let ret = match self.raw.as_ref().get_misspelled_word {
@@ -188,6 +239,7 @@ impl CefContextMenuParams {
       crate::include::internal::CefString::userfree(ret)
     }
   }
+  /// Returns true if the context menu was invoked on an editable node.
   pub fn is_editable(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().is_editable {
@@ -197,6 +249,8 @@ impl CefContextMenuParams {
       if ret == 0 { false } else { true }
     }
   }
+  /// Returns true if the context menu was invoked on an editable node where
+  /// spell-check is enabled.
   pub fn is_spell_check_enabled(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().is_spell_check_enabled {
@@ -206,6 +260,8 @@ impl CefContextMenuParams {
       if ret == 0 { false } else { true }
     }
   }
+  /// Returns flags representing the actions supported by the editable node, if
+  /// any, that the context menu was invoked on.
   pub fn get_edit_state_flags(&mut self) -> crate::include::internal::CefContextMenuEditStateFlags {
     unsafe {
       let ret = match self.raw.as_ref().get_edit_state_flags {
@@ -215,6 +271,8 @@ impl CefContextMenuParams {
       ret.into()
     }
   }
+  /// Returns true if the context menu contains items specified by the renderer
+  /// process (for example, plugin placeholder or pepper plugin menu items).
   pub fn is_custom_menu(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().is_custom_menu {
@@ -224,6 +282,7 @@ impl CefContextMenuParams {
       if ret == 0 { false } else { true }
     }
   }
+  /// Returns true if the context menu was invoked from a pepper plugin.
   pub fn is_pepper_menu(&mut self) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().is_pepper_menu {
