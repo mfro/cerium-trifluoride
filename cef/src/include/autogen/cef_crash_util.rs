@@ -97,7 +97,7 @@ pub fn cef_crash_reporting_enabled() -> bool {
 #[allow(non_snake_case)]
 pub fn cef_set_crash_key_value(key: &crate::include::internal::CefString, value: Option<&crate::include::internal::CefString>, ) -> () {
   unsafe {
-    let ret = cef_sys::cef_set_crash_key_value(crate::include::internal::IntoCef::into_cef(key),crate::include::internal::IntoCef::into_cef(value),);
+    let ret = cef_sys::cef_set_crash_key_value(key as *const _ as *const _,match value { Some(value) => value as *const _ as *const _, None => std::ptr::null_mut() },);
     ret
   }
 }

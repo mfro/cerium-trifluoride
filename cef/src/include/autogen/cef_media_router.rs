@@ -1,4 +1,4 @@
-pub type CefMediaRouter = crate::include::base::CefProxy<cef_sys::cef_media_router_t>;
+pub type CefMediaRouter = crate::include::refcounting::CefProxy<cef_sys::cef_media_router_t>;
 #[allow(non_snake_case)]
 impl CefMediaRouter {
   /// Returns the MediaRouter object associated with the global request context.
@@ -28,7 +28,7 @@ impl CefMediaRouter {
   pub fn get_source(&mut self, urn: &crate::include::internal::CefString) -> Option<crate::include::CefMediaSource> {
     unsafe {
       let ret = match self.raw.as_ref().get_source {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(urn),),
+        Some(f) => f(self.raw.as_ptr(),urn as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefMediaSource::from_cef_own(ret)
@@ -80,24 +80,32 @@ impl CefMediaRouter {
 pub trait MediaObserver {
   /// The connection state of |route| has changed.
   fn on_route_state_changed(&mut self, route: crate::include::CefMediaRoute, state: crate::include::internal::CefMediaRouteConnectionState) -> () { Default::default() }
+  /// A message was recieved over |route|. |message| is only valid for
+  /// the scope of this callback and should be copied if necessary.
+  fn on_route_message_received(&mut self, route: crate::include::CefMediaRoute, message: &[u8]) -> () { Default::default() }
 }
-define_refcounted!(MediaObserver, CefMediaObserver, cef_media_observer_t, on_route_state_changed: cef_media_observer_t_on_route_state_changed,);
+define_refcounted!(MediaObserver, CefMediaObserver, cef_media_observer_t, on_route_state_changed: cef_media_observer_t_on_route_state_changed,on_route_message_received: cef_media_observer_t_on_route_message_received,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_media_observer_t_on_route_state_changed(_self: *mut cef_sys::cef_media_observer_t, route: *mut cef_sys::cef_media_route_t, state: cef_sys::cef_media_route_connection_state_t) -> () {
   let ret = CefMediaObserver::from_cef(_self, true).get().on_route_state_changed(crate::include::CefMediaRoute::from_cef_own(route).unwrap(),state.into(),);
   ret
 }
-pub type CefMediaRoute = crate::include::base::CefProxy<cef_sys::cef_media_route_t>;
+#[allow(non_snake_case)]
+unsafe extern "C" fn cef_media_observer_t_on_route_message_received(_self: *mut cef_sys::cef_media_observer_t, route: *mut cef_sys::cef_media_route_t, message0: *const std::os::raw::c_void, message1: u64) -> () {
+  let ret = CefMediaObserver::from_cef(_self, true).get().on_route_message_received(crate::include::CefMediaRoute::from_cef_own(route).unwrap(),std::slice::from_raw_parts(message0 as *const _, message1 as _),);
+  ret
+}
+pub type CefMediaRoute = crate::include::refcounting::CefProxy<cef_sys::cef_media_route_t>;
 #[allow(non_snake_case)]
 impl CefMediaRoute {
   /// Returns the ID for this route.
-  pub fn get_id(&mut self) -> crate::include::internal::CefString {
+  pub fn get_id(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_id {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the source associated with this route.
@@ -118,6 +126,16 @@ impl CefMediaRoute {
         None => panic!(),
       };
       crate::include::CefMediaSink::from_cef_own(ret)
+    }
+  }
+  /// Send a message over this route. |message| will be copied if necessary.
+  pub fn send_route_message(&mut self, message: &[u8]) -> () {
+    unsafe {
+      let ret = match self.raw.as_ref().send_route_message {
+        Some(f) => f(self.raw.as_ptr(),message.as_ptr() as *const _,message.len() as _,),
+        None => panic!(),
+      };
+      ret
     }
   }
   /// Terminate this route. Will result in an asynchronous call to
@@ -146,40 +164,40 @@ pub trait MediaRouteCreateCallback {
 define_refcounted!(MediaRouteCreateCallback, CefMediaRouteCreateCallback, cef_media_route_create_callback_t, on_media_route_create_finished: cef_media_route_create_callback_t_on_media_route_create_finished,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_media_route_create_callback_t_on_media_route_create_finished(_self: *mut cef_sys::cef_media_route_create_callback_t, result: cef_sys::cef_media_route_create_result_t, error: *const cef_sys::cef_string_t, route: *mut cef_sys::cef_media_route_t) -> () {
-  let ret = CefMediaRouteCreateCallback::from_cef(_self, true).get().on_media_route_create_finished(result.into(),match &crate::include::internal::CefString::from_cef(error) { Some(ref x) => Some(x), None => None },crate::include::CefMediaRoute::from_cef_own(route),);
+  let ret = CefMediaRouteCreateCallback::from_cef(_self, true).get().on_media_route_create_finished(result.into(),if error.is_null() { None } else { Some(&*(error as *const _)) },crate::include::CefMediaRoute::from_cef_own(route),);
   ret
 }
-pub type CefMediaSink = crate::include::base::CefProxy<cef_sys::cef_media_sink_t>;
+pub type CefMediaSink = crate::include::refcounting::CefProxy<cef_sys::cef_media_sink_t>;
 #[allow(non_snake_case)]
 impl CefMediaSink {
   /// Returns the ID for this sink.
-  pub fn get_id(&mut self) -> crate::include::internal::CefString {
+  pub fn get_id(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_id {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the name of this sink.
-  pub fn get_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the description of this sink.
-  pub fn get_description(&mut self) -> crate::include::internal::CefString {
+  pub fn get_description(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_description {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the icon type for this sink.
@@ -248,17 +266,17 @@ unsafe extern "C" fn cef_media_sink_device_info_callback_t_on_media_sink_device_
   let ret = CefMediaSinkDeviceInfoCallback::from_cef(_self, true).get().on_media_sink_device_info(&*(device_info as *const _),);
   ret
 }
-pub type CefMediaSource = crate::include::base::CefProxy<cef_sys::cef_media_source_t>;
+pub type CefMediaSource = crate::include::refcounting::CefProxy<cef_sys::cef_media_source_t>;
 #[allow(non_snake_case)]
 impl CefMediaSource {
   /// Returns the ID (media source URN or URL) for this source.
-  pub fn get_id(&mut self) -> crate::include::internal::CefString {
+  pub fn get_id(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_id {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns true if this source outputs its content via Cast.

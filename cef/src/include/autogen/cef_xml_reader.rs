@@ -1,4 +1,4 @@
-pub type CefXmlReader = crate::include::base::CefProxy<cef_sys::cef_xml_reader_t>;
+pub type CefXmlReader = crate::include::refcounting::CefProxy<cef_sys::cef_xml_reader_t>;
 #[allow(non_snake_case)]
 impl CefXmlReader {
   /// Create a new CefXmlReader object. The returned object's methods can only
@@ -6,7 +6,7 @@ impl CefXmlReader {
   #[allow(non_snake_case)]
   pub fn create(stream: crate::include::CefStreamReader, encodingType: crate::include::internal::CefXmlEncodingType, URI: &crate::include::internal::CefString, ) -> Option<crate::include::CefXmlReader> {
     unsafe {
-      let ret = cef_sys::cef_xml_reader_create(crate::include::CefStreamReader::to_cef_own(stream),encodingType.into(),crate::include::internal::IntoCef::into_cef(URI),);
+      let ret = cef_sys::cef_xml_reader_create(crate::include::CefStreamReader::to_cef_own(stream),encodingType.into(),URI as *const _ as *const _,);
       crate::include::CefXmlReader::from_cef_own(ret)
     }
   }
@@ -44,13 +44,13 @@ impl CefXmlReader {
     }
   }
   /// Returns the error string.
-  pub fn get_error(&mut self) -> crate::include::internal::CefString {
+  pub fn get_error(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_error {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// The below methods retrieve data for the node at the current cursor
@@ -77,68 +77,68 @@ impl CefXmlReader {
   }
   /// Returns the local name. See
   /// http://www.w3.org/TR/REC-xml-names/#NT-LocalPart for additional details.
-  pub fn get_local_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_local_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_local_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the namespace prefix. See http://www.w3.org/TR/REC-xml-names/ for
   /// additional details.
-  pub fn get_prefix(&mut self) -> crate::include::internal::CefString {
+  pub fn get_prefix(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_prefix {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the qualified name, equal to (Prefix:)LocalName. See
   /// http://www.w3.org/TR/REC-xml-names/#ns-qualnames for additional details.
-  pub fn get_qualified_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_qualified_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_qualified_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the URI defining the namespace associated with the node. See
   /// http://www.w3.org/TR/REC-xml-names/ for additional details.
-  pub fn get_namespace_uri(&mut self) -> crate::include::internal::CefString {
+  pub fn get_namespace_uri(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_namespace_uri {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the base URI of the node. See http://www.w3.org/TR/xmlbase/ for
   /// additional details.
-  pub fn get_base_uri(&mut self) -> crate::include::internal::CefString {
+  pub fn get_base_uri(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_base_uri {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the xml:lang scope within which the node resides. See
   /// http://www.w3.org/TR/REC-xml/#sec-lang-tag for additional details.
-  pub fn get_xml_lang(&mut self) -> crate::include::internal::CefString {
+  pub fn get_xml_lang(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_xml_lang {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns true if the node represents an empty element. <a/> is considered
@@ -163,13 +163,13 @@ impl CefXmlReader {
     }
   }
   /// Returns the text value.
-  pub fn get_value(&mut self) -> crate::include::internal::CefString {
+  pub fn get_value(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_value {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns true if the node has attributes.
@@ -193,54 +193,54 @@ impl CefXmlReader {
     }
   }
   /// Returns the value of the attribute at the specified 0-based index.
-  pub fn get_attribute_byindex(&mut self, index: i32) -> crate::include::internal::CefString {
+  pub fn get_attribute_byindex(&mut self, index: i32) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_attribute_byindex {
         Some(f) => f(self.raw.as_ptr(),index,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the value of the attribute with the specified qualified name.
-  pub fn get_attribute_byqname(&mut self, qualifiedName: &crate::include::internal::CefString) -> crate::include::internal::CefString {
+  pub fn get_attribute_byqname(&mut self, qualifiedName: &crate::include::internal::CefString) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_attribute_byqname {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(qualifiedName),),
+        Some(f) => f(self.raw.as_ptr(),qualifiedName as *const _ as *const _,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the value of the attribute with the specified local name and
   /// namespace URI.
-  pub fn get_attribute_bylname(&mut self, localName: &crate::include::internal::CefString, namespaceURI: &crate::include::internal::CefString) -> crate::include::internal::CefString {
+  pub fn get_attribute_bylname(&mut self, localName: &crate::include::internal::CefString, namespaceURI: &crate::include::internal::CefString) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_attribute_bylname {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(localName),crate::include::internal::IntoCef::into_cef(namespaceURI),),
+        Some(f) => f(self.raw.as_ptr(),localName as *const _ as *const _,namespaceURI as *const _ as *const _,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns an XML representation of the current node's children.
-  pub fn get_inner_xml(&mut self) -> crate::include::internal::CefString {
+  pub fn get_inner_xml(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_inner_xml {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns an XML representation of the current node including its children.
-  pub fn get_outer_xml(&mut self) -> crate::include::internal::CefString {
+  pub fn get_outer_xml(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_outer_xml {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the line number for the current node.
@@ -273,7 +273,7 @@ impl CefXmlReader {
   pub fn move_to_attribute_byqname(&mut self, qualifiedName: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().move_to_attribute_byqname {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(qualifiedName),),
+        Some(f) => f(self.raw.as_ptr(),qualifiedName as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -284,7 +284,7 @@ impl CefXmlReader {
   pub fn move_to_attribute_bylname(&mut self, localName: &crate::include::internal::CefString, namespaceURI: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().move_to_attribute_bylname {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(localName),crate::include::internal::IntoCef::into_cef(namespaceURI),),
+        Some(f) => f(self.raw.as_ptr(),localName as *const _ as *const _,namespaceURI as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }

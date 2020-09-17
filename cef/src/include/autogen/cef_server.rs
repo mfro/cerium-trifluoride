@@ -1,4 +1,4 @@
-pub type CefServer = crate::include::base::CefProxy<cef_sys::cef_server_t>;
+pub type CefServer = crate::include::refcounting::CefProxy<cef_sys::cef_server_t>;
 #[allow(non_snake_case)]
 impl CefServer {
   /// Returns the task runner for the dedicated server thread.
@@ -37,13 +37,13 @@ impl CefServer {
     }
   }
   /// Returns the server address including the port number.
-  pub fn get_address(&mut self) -> crate::include::internal::CefString {
+  pub fn get_address(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_address {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns true if the server currently has a connection. This method must be
@@ -68,6 +68,20 @@ impl CefServer {
       if ret == 0 { false } else { true }
     }
   }
+  /// Send an HTTP 200 "OK" response to the connection identified by
+  /// |connection_id|. |content_type| is the response content type (e.g.
+  /// "text/html"), |data| is the response content, and |data_size| is the size
+  /// of |data| in bytes. The contents of |data| will be copied. The connection
+  /// will be closed automatically after the response is sent.
+  pub fn send_http200response(&mut self, connection_id: i32, content_type: &crate::include::internal::CefString, data: &[u8]) -> () {
+    unsafe {
+      let ret = match self.raw.as_ref().send_http200response {
+        Some(f) => f(self.raw.as_ptr(),connection_id,content_type as *const _ as *const _,data.as_ptr() as *const _,data.len() as _,),
+        None => panic!(),
+      };
+      ret
+    }
+  }
   /// Send an HTTP 404 "Not Found" response to the connection identified by
   /// |connection_id|. The connection will be closed automatically after the
   /// response is sent.
@@ -87,7 +101,22 @@ impl CefServer {
   pub fn send_http500response(&mut self, connection_id: i32, error_message: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().send_http500response {
-        Some(f) => f(self.raw.as_ptr(),connection_id,crate::include::internal::IntoCef::into_cef(error_message),),
+        Some(f) => f(self.raw.as_ptr(),connection_id,error_message as *const _ as *const _,),
+        None => panic!(),
+      };
+      ret
+    }
+  }
+  /// Send raw data directly to the connection identified by |connection_id|.
+  /// |data| is the raw data and |data_size| is the size of |data| in bytes.
+  /// The contents of |data| will be copied. No validation of |data| is
+  /// performed internally so the client should be careful to send the amount
+  /// indicated by the "Content-Length" header, if specified. See
+  /// SendHttpResponse documentation for intended usage.
+  pub fn send_raw_data(&mut self, connection_id: &[u8], data_size: u64) -> () {
+    unsafe {
+      let ret = match self.raw.as_ref().send_raw_data {
+        Some(f) => f(self.raw.as_ptr(),connection_id.len() as _,connection_id.as_ptr() as *const _,data_size,),
         None => panic!(),
       };
       ret
@@ -99,6 +128,19 @@ impl CefServer {
     unsafe {
       let ret = match self.raw.as_ref().close_connection {
         Some(f) => f(self.raw.as_ptr(),connection_id,),
+        None => panic!(),
+      };
+      ret
+    }
+  }
+  /// Send a WebSocket message to the connection identified by |connection_id|.
+  /// |data| is the response content and |data_size| is the size of |data| in
+  /// bytes. The contents of |data| will be copied. See
+  /// CefServerHandler::OnWebSocketRequest documentation for intended usage.
+  pub fn send_web_socket_message(&mut self, connection_id: &[u8], data_size: u64) -> () {
+    unsafe {
+      let ret = match self.raw.as_ref().send_web_socket_message {
+        Some(f) => f(self.raw.as_ptr(),connection_id.len() as _,connection_id.as_ptr() as *const _,data_size,),
         None => panic!(),
       };
       ret
@@ -158,8 +200,14 @@ pub trait ServerHandler {
   /// and |connection_id| via the OnWebSocketRequest callback. See
   /// OnWebSocketRequest documentation for intended usage.
   fn on_web_socket_connected(&mut self, server: crate::include::CefServer, connection_id: i32) -> () { Default::default() }
+  /// Called when |server| receives an WebSocket message. |connection_id|
+  /// uniquely identifies the connection, |data| is the message content and
+  /// |data_size| is the size of |data| in bytes. Do not keep a reference to
+  /// |data| outside of this method. See OnWebSocketRequest documentation for
+  /// intended usage.
+  fn on_web_socket_message(&mut self, server: crate::include::CefServer, connection_id: &[u8], data_size: u64) -> () { Default::default() }
 }
-define_refcounted!(ServerHandler, CefServerHandler, cef_server_handler_t, on_server_created: cef_server_handler_t_on_server_created,on_server_destroyed: cef_server_handler_t_on_server_destroyed,on_client_connected: cef_server_handler_t_on_client_connected,on_client_disconnected: cef_server_handler_t_on_client_disconnected,on_http_request: cef_server_handler_t_on_http_request,on_web_socket_request: cef_server_handler_t_on_web_socket_request,on_web_socket_connected: cef_server_handler_t_on_web_socket_connected,);
+define_refcounted!(ServerHandler, CefServerHandler, cef_server_handler_t, on_server_created: cef_server_handler_t_on_server_created,on_server_destroyed: cef_server_handler_t_on_server_destroyed,on_client_connected: cef_server_handler_t_on_client_connected,on_client_disconnected: cef_server_handler_t_on_client_disconnected,on_http_request: cef_server_handler_t_on_http_request,on_web_socket_request: cef_server_handler_t_on_web_socket_request,on_web_socket_connected: cef_server_handler_t_on_web_socket_connected,on_web_socket_message: cef_server_handler_t_on_web_socket_message,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_server_handler_t_on_server_created(_self: *mut cef_sys::cef_server_handler_t, server: *mut cef_sys::cef_server_t) -> () {
   let ret = CefServerHandler::from_cef(_self, true).get().on_server_created(crate::include::CefServer::from_cef_own(server).unwrap(),);
@@ -182,16 +230,21 @@ unsafe extern "C" fn cef_server_handler_t_on_client_disconnected(_self: *mut cef
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_server_handler_t_on_http_request(_self: *mut cef_sys::cef_server_handler_t, server: *mut cef_sys::cef_server_t, connection_id: i32, client_address: *const cef_sys::cef_string_t, request: *mut cef_sys::cef_request_t) -> () {
-  let ret = CefServerHandler::from_cef(_self, true).get().on_http_request(crate::include::CefServer::from_cef_own(server).unwrap(),connection_id,&crate::include::internal::CefString::from_cef(client_address).unwrap(),crate::include::CefRequest::from_cef_own(request).unwrap(),);
+  let ret = CefServerHandler::from_cef(_self, true).get().on_http_request(crate::include::CefServer::from_cef_own(server).unwrap(),connection_id,&*(client_address as *const _),crate::include::CefRequest::from_cef_own(request).unwrap(),);
   ret
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_server_handler_t_on_web_socket_request(_self: *mut cef_sys::cef_server_handler_t, server: *mut cef_sys::cef_server_t, connection_id: i32, client_address: *const cef_sys::cef_string_t, request: *mut cef_sys::cef_request_t, callback: *mut cef_sys::cef_callback_t) -> () {
-  let ret = CefServerHandler::from_cef(_self, true).get().on_web_socket_request(crate::include::CefServer::from_cef_own(server).unwrap(),connection_id,&crate::include::internal::CefString::from_cef(client_address).unwrap(),crate::include::CefRequest::from_cef_own(request).unwrap(),crate::include::CefCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefServerHandler::from_cef(_self, true).get().on_web_socket_request(crate::include::CefServer::from_cef_own(server).unwrap(),connection_id,&*(client_address as *const _),crate::include::CefRequest::from_cef_own(request).unwrap(),crate::include::CefCallback::from_cef_own(callback).unwrap(),);
   ret
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_server_handler_t_on_web_socket_connected(_self: *mut cef_sys::cef_server_handler_t, server: *mut cef_sys::cef_server_t, connection_id: i32) -> () {
   let ret = CefServerHandler::from_cef(_self, true).get().on_web_socket_connected(crate::include::CefServer::from_cef_own(server).unwrap(),connection_id,);
+  ret
+}
+#[allow(non_snake_case)]
+unsafe extern "C" fn cef_server_handler_t_on_web_socket_message(_self: *mut cef_sys::cef_server_handler_t, server: *mut cef_sys::cef_server_t, connection_id0: i32, connection_id1: *const std::os::raw::c_void, data_size: u64) -> () {
+  let ret = CefServerHandler::from_cef(_self, true).get().on_web_socket_message(crate::include::CefServer::from_cef_own(server).unwrap(),std::slice::from_raw_parts(connection_id0 as *const _, connection_id1 as _),data_size,);
   ret
 }

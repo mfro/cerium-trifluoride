@@ -1,4 +1,4 @@
-pub type CefBrowser = crate::include::base::CefProxy<cef_sys::cef_browser_t>;
+pub type CefBrowser = crate::include::refcounting::CefProxy<cef_sys::cef_browser_t>;
 #[allow(non_snake_case)]
 impl CefBrowser {
   /// Returns the browser host object. This method can only be called in the
@@ -168,7 +168,7 @@ impl CefBrowser {
   pub fn get_frame(&mut self, name: Option<&crate::include::internal::CefString>) -> Option<crate::include::CefFrame> {
     unsafe {
       let ret = match self.raw.as_ref().get_frame {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),match name { Some(name) => name as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       crate::include::CefFrame::from_cef_own(ret)
@@ -234,7 +234,7 @@ pub trait PdfPrintCallback {
 define_refcounted!(PdfPrintCallback, CefPdfPrintCallback, cef_pdf_print_callback_t, on_pdf_print_finished: cef_pdf_print_callback_t_on_pdf_print_finished,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_pdf_print_callback_t_on_pdf_print_finished(_self: *mut cef_sys::cef_pdf_print_callback_t, path: *const cef_sys::cef_string_t, ok: i32) -> () {
-  let ret = CefPdfPrintCallback::from_cef(_self, true).get().on_pdf_print_finished(&crate::include::internal::CefString::from_cef(path).unwrap(),if ok == 0 { false } else { true },);
+  let ret = CefPdfPrintCallback::from_cef(_self, true).get().on_pdf_print_finished(&*(path as *const _),if ok == 0 { false } else { true },);
   ret
 }
 /// Callback interface for CefBrowserHost::DownloadImage. The methods of this
@@ -251,10 +251,10 @@ pub trait DownloadImageCallback {
 define_refcounted!(DownloadImageCallback, CefDownloadImageCallback, cef_download_image_callback_t, on_download_image_finished: cef_download_image_callback_t_on_download_image_finished,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_download_image_callback_t_on_download_image_finished(_self: *mut cef_sys::cef_download_image_callback_t, image_url: *const cef_sys::cef_string_t, http_status_code: i32, image: *mut cef_sys::cef_image_t) -> () {
-  let ret = CefDownloadImageCallback::from_cef(_self, true).get().on_download_image_finished(&crate::include::internal::CefString::from_cef(image_url).unwrap(),http_status_code,crate::include::CefImage::from_cef_own(image),);
+  let ret = CefDownloadImageCallback::from_cef(_self, true).get().on_download_image_finished(&*(image_url as *const _),http_status_code,crate::include::CefImage::from_cef_own(image),);
   ret
 }
-pub type CefBrowserHost = crate::include::base::CefProxy<cef_sys::cef_browser_host_t>;
+pub type CefBrowserHost = crate::include::refcounting::CefProxy<cef_sys::cef_browser_host_t>;
 #[allow(non_snake_case)]
 impl CefBrowserHost {
   /// Create a new browser window using the window parameters specified by
@@ -268,7 +268,7 @@ impl CefBrowserHost {
   #[allow(non_snake_case)]
   pub fn create_browser(windowInfo: &crate::include::internal::CefWindowInfo, client: Option<crate::include::CefClient>, url: Option<&crate::include::internal::CefString>, settings: &crate::include::internal::CefBrowserSettings, extra_info: Option<crate::include::CefDictionaryValue>, request_context: Option<crate::include::CefRequestContext>, ) -> bool {
     unsafe {
-      let ret = cef_sys::cef_browser_host_create_browser(windowInfo as *const _ as *const _,client.map_or(std::ptr::null_mut(), |o| crate::include::CefClient::to_cef_own(o)),crate::include::internal::IntoCef::into_cef(url),settings as *const _ as *const _,extra_info.map_or(std::ptr::null_mut(), |o| crate::include::CefDictionaryValue::to_cef_own(o)),request_context.map_or(std::ptr::null_mut(), |o| crate::include::CefRequestContext::to_cef_own(o)),);
+      let ret = cef_sys::cef_browser_host_create_browser(windowInfo as *const _ as *const _,client.map_or(std::ptr::null_mut(), |o| crate::include::CefClient::to_cef_own(o)),match url { Some(url) => url as *const _ as *const _, None => std::ptr::null_mut() },settings as *const _ as *const _,extra_info.map_or(std::ptr::null_mut(), |o| crate::include::CefDictionaryValue::to_cef_own(o)),request_context.map_or(std::ptr::null_mut(), |o| crate::include::CefRequestContext::to_cef_own(o)),);
       if ret == 0 { false } else { true }
     }
   }
@@ -282,7 +282,7 @@ impl CefBrowserHost {
   #[allow(non_snake_case)]
   pub fn create_browser_sync(windowInfo: &crate::include::internal::CefWindowInfo, client: Option<crate::include::CefClient>, url: Option<&crate::include::internal::CefString>, settings: &crate::include::internal::CefBrowserSettings, extra_info: Option<crate::include::CefDictionaryValue>, request_context: Option<crate::include::CefRequestContext>, ) -> Option<crate::include::CefBrowser> {
     unsafe {
-      let ret = cef_sys::cef_browser_host_create_browser_sync(windowInfo as *const _ as *const _,client.map_or(std::ptr::null_mut(), |o| crate::include::CefClient::to_cef_own(o)),crate::include::internal::IntoCef::into_cef(url),settings as *const _ as *const _,extra_info.map_or(std::ptr::null_mut(), |o| crate::include::CefDictionaryValue::to_cef_own(o)),request_context.map_or(std::ptr::null_mut(), |o| crate::include::CefRequestContext::to_cef_own(o)),);
+      let ret = cef_sys::cef_browser_host_create_browser_sync(windowInfo as *const _ as *const _,client.map_or(std::ptr::null_mut(), |o| crate::include::CefClient::to_cef_own(o)),match url { Some(url) => url as *const _ as *const _, None => std::ptr::null_mut() },settings as *const _ as *const _,extra_info.map_or(std::ptr::null_mut(), |o| crate::include::CefDictionaryValue::to_cef_own(o)),request_context.map_or(std::ptr::null_mut(), |o| crate::include::CefRequestContext::to_cef_own(o)),);
       crate::include::CefBrowser::from_cef_own(ret)
     }
   }
@@ -434,7 +434,7 @@ impl CefBrowserHost {
   pub fn run_file_dialog(&mut self, mode: crate::include::internal::CefFileDialogMode, title: Option<&crate::include::internal::CefString>, default_file_path: Option<&crate::include::internal::CefString>, accept_filters: &crate::include::internal::CefStringList, selected_accept_filter: i32, callback: crate::include::CefRunFileDialogCallback) -> () {
     unsafe {
       let ret = match self.raw.as_ref().run_file_dialog {
-        Some(f) => f(self.raw.as_ptr(),mode.into(),crate::include::internal::IntoCef::into_cef(title),crate::include::internal::IntoCef::into_cef(default_file_path),accept_filters.into(),selected_accept_filter,crate::include::CefRunFileDialogCallback::to_cef_own(callback),),
+        Some(f) => f(self.raw.as_ptr(),mode.into(),match title { Some(title) => title as *const _ as *const _, None => std::ptr::null_mut() },match default_file_path { Some(default_file_path) => default_file_path as *const _ as *const _, None => std::ptr::null_mut() },accept_filters.into(),selected_accept_filter,crate::include::CefRunFileDialogCallback::to_cef_own(callback),),
         None => panic!(),
       };
       ret
@@ -444,7 +444,7 @@ impl CefBrowserHost {
   pub fn start_download(&mut self, url: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().start_download {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(url),),
+        Some(f) => f(self.raw.as_ptr(),url as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -463,7 +463,7 @@ impl CefBrowserHost {
   pub fn download_image(&mut self, image_url: &crate::include::internal::CefString, is_favicon: bool, max_image_size: u32, bypass_cache: bool, callback: crate::include::CefDownloadImageCallback) -> () {
     unsafe {
       let ret = match self.raw.as_ref().download_image {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(image_url),if is_favicon { 1 } else { 0 },max_image_size,if bypass_cache { 1 } else { 0 },crate::include::CefDownloadImageCallback::to_cef_own(callback),),
+        Some(f) => f(self.raw.as_ptr(),image_url as *const _ as *const _,if is_favicon { 1 } else { 0 },max_image_size,if bypass_cache { 1 } else { 0 },crate::include::CefDownloadImageCallback::to_cef_own(callback),),
         None => panic!(),
       };
       ret
@@ -486,7 +486,7 @@ impl CefBrowserHost {
   pub fn print_to_pdf(&mut self, path: &crate::include::internal::CefString, settings: &crate::include::internal::CefPdfPrintSettings, callback: Option<crate::include::CefPdfPrintCallback>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().print_to_pdf {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(path),settings as *const _ as *const _,callback.map_or(std::ptr::null_mut(), |o| crate::include::CefPdfPrintCallback::to_cef_own(o)),),
+        Some(f) => f(self.raw.as_ptr(),path as *const _ as *const _,settings as *const _ as *const _,callback.map_or(std::ptr::null_mut(), |o| crate::include::CefPdfPrintCallback::to_cef_own(o)),),
         None => panic!(),
       };
       ret
@@ -504,7 +504,7 @@ impl CefBrowserHost {
   pub fn find(&mut self, identifier: i32, searchText: &crate::include::internal::CefString, forward: bool, matchCase: bool, findNext: bool) -> () {
     unsafe {
       let ret = match self.raw.as_ref().find {
-        Some(f) => f(self.raw.as_ptr(),identifier,crate::include::internal::IntoCef::into_cef(searchText),if forward { 1 } else { 0 },if matchCase { 1 } else { 0 },if findNext { 1 } else { 0 },),
+        Some(f) => f(self.raw.as_ptr(),identifier,searchText as *const _ as *const _,if forward { 1 } else { 0 },if matchCase { 1 } else { 0 },if findNext { 1 } else { 0 },),
         None => panic!(),
       };
       ret
@@ -557,6 +557,45 @@ impl CefBrowserHost {
       if ret == 0 { false } else { true }
     }
   }
+  /// Send a method call message over the DevTools protocol. |message| must be a
+  /// UTF8-encoded JSON dictionary that contains "id" (int), "method" (string)
+  /// and "params" (dictionary, optional) values. See the DevTools protocol
+  /// documentation at https://chromedevtools.github.io/devtools-protocol/ for
+  /// details of supported methods and the expected "params" dictionary contents.
+  /// |message| will be copied if necessary. This method will return true if
+  /// called on the UI thread and the message was successfully submitted for
+  /// validation, otherwise false. Validation will be applied asynchronously and
+  /// any messages that fail due to formatting errors or missing parameters may
+  /// be discarded without notification. Prefer ExecuteDevToolsMethod if a more
+  /// structured approach to message formatting is desired.
+  /// 
+  /// Every valid method call will result in an asynchronous method result or
+  /// error message that references the sent message "id". Event messages are
+  /// received while notifications are enabled (for example, between method calls
+  /// for "Page.enable" and "Page.disable"). All received messages will be
+  /// delivered to the observer(s) registered with AddDevToolsMessageObserver.
+  /// See CefDevToolsMessageObserver::OnDevToolsMessage documentation for details
+  /// of received message contents.
+  /// 
+  /// Usage of the SendDevToolsMessage, ExecuteDevToolsMethod and
+  /// AddDevToolsMessageObserver methods does not require an active DevTools
+  /// front-end or remote-debugging session. Other active DevTools sessions will
+  /// continue to function independently. However, any modification of global
+  /// browser state by one session may not be reflected in the UI of other
+  /// sessions.
+  /// 
+  /// Communication with the DevTools front-end (when displayed) can be logged
+  /// for development purposes by passing the
+  /// `--devtools-protocol-log-file=<path>` command-line flag.
+  pub fn send_dev_tools_message(&mut self, message: &[u8]) -> bool {
+    unsafe {
+      let ret = match self.raw.as_ref().send_dev_tools_message {
+        Some(f) => f(self.raw.as_ptr(),message.as_ptr() as *const _,message.len() as _,),
+        None => panic!(),
+      };
+      if ret == 0 { false } else { true }
+    }
+  }
   /// Execute a method call over the DevTools protocol. This is a more structured
   /// version of SendDevToolsMessage. |message_id| is an incremental number that
   /// uniquely identifies the message (pass 0 to have the next number assigned
@@ -570,7 +609,7 @@ impl CefBrowserHost {
   pub fn execute_dev_tools_method(&mut self, message_id: i32, method: &crate::include::internal::CefString, params: Option<crate::include::CefDictionaryValue>) -> i32 {
     unsafe {
       let ret = match self.raw.as_ref().execute_dev_tools_method {
-        Some(f) => f(self.raw.as_ptr(),message_id,crate::include::internal::IntoCef::into_cef(method),params.map_or(std::ptr::null_mut(), |o| crate::include::CefDictionaryValue::to_cef_own(o)),),
+        Some(f) => f(self.raw.as_ptr(),message_id,method as *const _ as *const _,params.map_or(std::ptr::null_mut(), |o| crate::include::CefDictionaryValue::to_cef_own(o)),),
         None => panic!(),
       };
       ret
@@ -626,7 +665,7 @@ impl CefBrowserHost {
   pub fn replace_misspelling(&mut self, word: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().replace_misspelling {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(word),),
+        Some(f) => f(self.raw.as_ptr(),word as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -636,7 +675,7 @@ impl CefBrowserHost {
   pub fn add_word_to_dictionary(&mut self, word: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().add_word_to_dictionary {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(word),),
+        Some(f) => f(self.raw.as_ptr(),word as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -830,6 +869,36 @@ impl CefBrowserHost {
       ret
     }
   }
+  /// Begins a new composition or updates the existing composition. Blink has a
+  /// special node (a composition node) that allows the input method to change
+  /// text without affecting other DOM nodes. |text| is the optional text that
+  /// will be inserted into the composition node. |underlines| is an optional set
+  /// of ranges that will be underlined in the resulting text.
+  /// |replacement_range| is an optional range of the existing text that will be
+  /// replaced. |selection_range| is an optional range of the resulting text that
+  /// will be selected after insertion or replacement. The |replacement_range|
+  /// value is only used on OS X.
+  /// 
+  /// This method may be called multiple times as the composition changes. When
+  /// the client is done making changes the composition should either be canceled
+  /// or completed. To cancel the composition call ImeCancelComposition. To
+  /// complete the composition call either ImeCommitText or
+  /// ImeFinishComposingText. Completion is usually signaled when:
+  /// A. The client receives a WM_IME_COMPOSITION message with a GCS_RESULTSTR
+  /// flag (on Windows), or;
+  /// B. The client receives a "commit" signal of GtkIMContext (on Linux), or;
+  /// C. insertText of NSTextInput is called (on Mac).
+  /// 
+  /// This method is only used when window rendering is disabled.
+  pub fn ime_set_composition(&mut self, text: Option<&crate::include::internal::CefString>, underlines: &[crate::include::internal::CefCompositionUnderline], replacement_range: &crate::include::internal::CefRange, selection_range: &crate::include::internal::CefRange) -> () {
+    unsafe {
+      let ret = match self.raw.as_ref().ime_set_composition {
+        Some(f) => f(self.raw.as_ptr(),match text { Some(text) => text as *const _ as *const _, None => std::ptr::null_mut() },underlines.len() as _,underlines.as_ptr() as *const _,replacement_range as *const _ as *const _,selection_range as *const _ as *const _,),
+        None => panic!(),
+      };
+      ret
+    }
+  }
   /// Completes the existing composition by optionally inserting the specified
   /// |text| into the composition node. |replacement_range| is an optional range
   /// of the existing text that will be replaced. |relative_cursor_pos| is where
@@ -840,7 +909,7 @@ impl CefBrowserHost {
   pub fn ime_commit_text(&mut self, text: Option<&crate::include::internal::CefString>, replacement_range: &crate::include::internal::CefRange, relative_cursor_pos: i32) -> () {
     unsafe {
       let ret = match self.raw.as_ref().ime_commit_text {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(text),replacement_range as *const _ as *const _,relative_cursor_pos,),
+        Some(f) => f(self.raw.as_ptr(),match text { Some(text) => text as *const _ as *const _, None => std::ptr::null_mut() },replacement_range as *const _ as *const _,relative_cursor_pos,),
         None => panic!(),
       };
       ret

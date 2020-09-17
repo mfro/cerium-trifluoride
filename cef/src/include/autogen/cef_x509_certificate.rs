@@ -1,60 +1,60 @@
-pub type CefX509CertPrincipal = crate::include::base::CefProxy<cef_sys::cef_x509cert_principal_t>;
+pub type CefX509CertPrincipal = crate::include::refcounting::CefProxy<cef_sys::cef_x509cert_principal_t>;
 #[allow(non_snake_case)]
 impl CefX509CertPrincipal {
   /// Returns a name that can be used to represent the issuer. It tries in this
   /// order: Common Name (CN), Organization Name (O) and Organizational Unit
   /// Name (OU) and returns the first non-empty one found.
-  pub fn get_display_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_display_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_display_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the common name.
-  pub fn get_common_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_common_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_common_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the locality name.
-  pub fn get_locality_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_locality_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_locality_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the state or province name.
-  pub fn get_state_or_province_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_state_or_province_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_state_or_province_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the country name.
-  pub fn get_country_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_country_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_country_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
 }
-pub type CefX509Certificate = crate::include::base::CefProxy<cef_sys::cef_x509certificate_t>;
+pub type CefX509Certificate = crate::include::refcounting::CefProxy<cef_sys::cef_x509certificate_t>;
 #[allow(non_snake_case)]
 impl CefX509Certificate {
   /// Returns the subject of the X.509 certificate. For HTTPS server

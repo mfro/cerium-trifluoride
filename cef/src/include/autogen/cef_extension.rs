@@ -1,28 +1,28 @@
-pub type CefExtension = crate::include::base::CefProxy<cef_sys::cef_extension_t>;
+pub type CefExtension = crate::include::refcounting::CefProxy<cef_sys::cef_extension_t>;
 #[allow(non_snake_case)]
 impl CefExtension {
   /// Returns the unique extension identifier. This is calculated based on the
   /// extension public key, if available, or on the extension path. See
   /// https://developer.chrome.com/extensions/manifest/key for details.
-  pub fn get_identifier(&mut self) -> crate::include::internal::CefString {
+  pub fn get_identifier(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_identifier {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the absolute path to the extension directory on disk. This value
   /// will be prefixed with PK_DIR_RESOURCES if a relative path was passed to
   /// CefRequestContext::LoadExtension.
-  pub fn get_path(&mut self) -> crate::include::internal::CefString {
+  pub fn get_path(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_path {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the extension manifest contents as a CefDictionaryValue object. See

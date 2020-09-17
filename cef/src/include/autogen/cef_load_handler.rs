@@ -55,6 +55,6 @@ unsafe extern "C" fn cef_load_handler_t_on_load_end(_self: *mut cef_sys::cef_loa
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_load_handler_t_on_load_error(_self: *mut cef_sys::cef_load_handler_t, browser: *mut cef_sys::cef_browser_t, frame: *mut cef_sys::cef_frame_t, errorCode: cef_sys::cef_errorcode_t, errorText: *const cef_sys::cef_string_t, failedUrl: *const cef_sys::cef_string_t) -> () {
-  let ret = CefLoadHandler::from_cef(_self, true).get().on_load_error(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),errorCode.into(),match &crate::include::internal::CefString::from_cef(errorText) { Some(ref x) => Some(x), None => None },&crate::include::internal::CefString::from_cef(failedUrl).unwrap(),);
+  let ret = CefLoadHandler::from_cef(_self, true).get().on_load_error(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),errorCode.into(),if errorText.is_null() { None } else { Some(&*(errorText as *const _)) },&*(failedUrl as *const _),);
   ret
 }

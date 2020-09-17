@@ -1,4 +1,4 @@
-pub type CefResourceSkipCallback = crate::include::base::CefProxy<cef_sys::cef_resource_skip_callback_t>;
+pub type CefResourceSkipCallback = crate::include::refcounting::CefProxy<cef_sys::cef_resource_skip_callback_t>;
 #[allow(non_snake_case)]
 impl CefResourceSkipCallback {
   /// Callback for asynchronous continuation of Skip(). If |bytes_skipped| > 0
@@ -15,7 +15,7 @@ impl CefResourceSkipCallback {
     }
   }
 }
-pub type CefResourceReadCallback = crate::include::base::CefProxy<cef_sys::cef_resource_read_callback_t>;
+pub type CefResourceReadCallback = crate::include::refcounting::CefProxy<cef_sys::cef_resource_read_callback_t>;
 #[allow(non_snake_case)]
 impl CefResourceReadCallback {
   /// Callback for asynchronous continuation of Read(). If |bytes_read| == 0
@@ -89,7 +89,7 @@ pub trait ResourceHandler {
   /// but not from a dedicated thread. For backwards compatibility set
   /// |bytes_read| to -1 and return false and the ReadResponse method will be
   /// called.
-  fn read(&mut self, data_out: &mut std::os::raw::c_void, bytes_to_read: i32, bytes_read: &mut i32, callback: crate::include::CefResourceReadCallback) -> bool { Default::default() }
+  fn read(&mut self, data_out: &mut [u8], bytes_read: &mut i32, callback: crate::include::CefResourceReadCallback) -> bool { Default::default() }
   /// Read response data. If data is available immediately copy up to
   /// |bytes_to_read| bytes into |data_out|, set |bytes_read| to the number of
   /// bytes copied, and return true. To read the data at a later time set
@@ -97,7 +97,7 @@ pub trait ResourceHandler {
   /// data is available. To indicate response completion return false.
   /// 
   /// WARNING: This method is deprecated. Use Skip and Read instead.
-  fn read_response(&mut self, data_out: &mut std::os::raw::c_void, bytes_to_read: i32, bytes_read: &mut i32, callback: crate::include::CefCallback) -> bool { Default::default() }
+  fn read_response(&mut self, data_out: &mut [u8], bytes_read: &mut i32, callback: crate::include::CefCallback) -> bool { Default::default() }
   /// Request processing has been canceled.
   fn cancel(&mut self) -> () { Default::default() }
 }
@@ -116,7 +116,7 @@ unsafe extern "C" fn cef_resource_handler_t_process_request(_self: *mut cef_sys:
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_resource_handler_t_get_response_headers(_self: *mut cef_sys::cef_resource_handler_t, response: *mut cef_sys::cef_response_t, response_length: *mut i64, redirectUrl: *mut cef_sys::cef_string_t) -> () {
-  let ret = CefResourceHandler::from_cef(_self, true).get().get_response_headers(crate::include::CefResponse::from_cef_own(response).unwrap(),&mut *response_length,&mut crate::include::internal::CefString::from_cef(redirectUrl).unwrap(),);
+  let ret = CefResourceHandler::from_cef(_self, true).get().get_response_headers(crate::include::CefResponse::from_cef_own(response).unwrap(),&mut *response_length,&mut *(redirectUrl as *mut _),);
   ret
 }
 #[allow(non_snake_case)]
@@ -125,13 +125,13 @@ unsafe extern "C" fn cef_resource_handler_t_skip(_self: *mut cef_sys::cef_resour
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
-unsafe extern "C" fn cef_resource_handler_t_read(_self: *mut cef_sys::cef_resource_handler_t, data_out: *mut std::os::raw::c_void, bytes_to_read: i32, bytes_read: *mut i32, callback: *mut cef_sys::cef_resource_read_callback_t) -> i32 {
-  let ret = CefResourceHandler::from_cef(_self, true).get().read(&mut *data_out,bytes_to_read,&mut *bytes_read,crate::include::CefResourceReadCallback::from_cef_own(callback).unwrap(),);
+unsafe extern "C" fn cef_resource_handler_t_read(_self: *mut cef_sys::cef_resource_handler_t, data_out0: *mut std::os::raw::c_void, data_out1: i32, bytes_read: *mut i32, callback: *mut cef_sys::cef_resource_read_callback_t) -> i32 {
+  let ret = CefResourceHandler::from_cef(_self, true).get().read(std::slice::from_raw_parts_mut(data_out0 as *mut _, data_out1 as _),&mut *bytes_read,crate::include::CefResourceReadCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
-unsafe extern "C" fn cef_resource_handler_t_read_response(_self: *mut cef_sys::cef_resource_handler_t, data_out: *mut std::os::raw::c_void, bytes_to_read: i32, bytes_read: *mut i32, callback: *mut cef_sys::cef_callback_t) -> i32 {
-  let ret = CefResourceHandler::from_cef(_self, true).get().read_response(&mut *data_out,bytes_to_read,&mut *bytes_read,crate::include::CefCallback::from_cef_own(callback).unwrap(),);
+unsafe extern "C" fn cef_resource_handler_t_read_response(_self: *mut cef_sys::cef_resource_handler_t, data_out0: *mut std::os::raw::c_void, data_out1: i32, bytes_read: *mut i32, callback: *mut cef_sys::cef_callback_t) -> i32 {
+  let ret = CefResourceHandler::from_cef(_self, true).get().read_response(std::slice::from_raw_parts_mut(data_out0 as *mut _, data_out1 as _),&mut *bytes_read,crate::include::CefCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]

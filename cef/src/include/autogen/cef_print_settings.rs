@@ -1,4 +1,4 @@
-pub type CefPrintSettings = crate::include::base::CefProxy<cef_sys::cef_print_settings_t>;
+pub type CefPrintSettings = crate::include::refcounting::CefProxy<cef_sys::cef_print_settings_t>;
 #[allow(non_snake_case)]
 impl CefPrintSettings {
   /// Create a new CefPrintSettings object.
@@ -67,20 +67,20 @@ impl CefPrintSettings {
   pub fn set_device_name(&mut self, name: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_device_name {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),match name { Some(name) => name as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret
     }
   }
   /// Get the device name.
-  pub fn get_device_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_device_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_device_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Set the DPI (dots per inch).
@@ -98,6 +98,16 @@ impl CefPrintSettings {
     unsafe {
       let ret = match self.raw.as_ref().get_dpi {
         Some(f) => f(self.raw.as_ptr(),),
+        None => panic!(),
+      };
+      ret
+    }
+  }
+  /// Set the page ranges.
+  pub fn set_page_ranges(&mut self, ranges: &[crate::include::internal::CefRange]) -> () {
+    unsafe {
+      let ret = match self.raw.as_ref().set_page_ranges {
+        Some(f) => f(self.raw.as_ptr(),ranges.len() as _,ranges.as_ptr() as *const _,),
         None => panic!(),
       };
       ret

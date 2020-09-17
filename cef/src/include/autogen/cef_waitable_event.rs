@@ -1,4 +1,4 @@
-pub type CefWaitableEvent = crate::include::base::CefProxy<cef_sys::cef_waitable_event_t>;
+pub type CefWaitableEvent = crate::include::refcounting::CefProxy<cef_sys::cef_waitable_event_t>;
 #[allow(non_snake_case)]
 impl CefWaitableEvent {
   /// Create a new waitable event. If |automatic_reset| is true then the event

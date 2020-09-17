@@ -1,4 +1,4 @@
-pub type CefRequest = crate::include::base::CefProxy<cef_sys::cef_request_t>;
+pub type CefRequest = crate::include::refcounting::CefProxy<cef_sys::cef_request_t>;
 #[allow(non_snake_case)]
 impl CefRequest {
   /// Create a new CefRequest object.
@@ -20,20 +20,20 @@ impl CefRequest {
     }
   }
   /// Get the fully qualified URL.
-  pub fn get_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Set the fully qualified URL.
   pub fn set_url(&mut self, url: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_url {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(url),),
+        Some(f) => f(self.raw.as_ptr(),url as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -41,20 +41,20 @@ impl CefRequest {
   }
   /// Get the request method type. The value will default to POST if post data
   /// is provided and GET otherwise.
-  pub fn get_method(&mut self) -> crate::include::internal::CefString {
+  pub fn get_method(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_method {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Set the request method type.
   pub fn set_method(&mut self, method: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_method {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(method),),
+        Some(f) => f(self.raw.as_ptr(),method as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -66,20 +66,20 @@ impl CefRequest {
   pub fn set_referrer(&mut self, referrer_url: Option<&crate::include::internal::CefString>, policy: crate::include::internal::CefReferrerPolicy) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_referrer {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(referrer_url),policy.into(),),
+        Some(f) => f(self.raw.as_ptr(),match referrer_url { Some(referrer_url) => referrer_url as *const _ as *const _, None => std::ptr::null_mut() },policy.into(),),
         None => panic!(),
       };
       ret
     }
   }
   /// Get the referrer URL.
-  pub fn get_referrer_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_referrer_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_referrer_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Get the referrer policy.
@@ -115,13 +115,13 @@ impl CefRequest {
   /// Returns the first header value for |name| or an empty string if not found.
   /// Will not return the Referer value if any. Use GetHeaderMap instead if
   /// |name| might have multiple values.
-  pub fn get_header_by_name(&mut self, name: &crate::include::internal::CefString) -> crate::include::internal::CefString {
+  pub fn get_header_by_name(&mut self, name: &crate::include::internal::CefString) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_header_by_name {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Set the header |name| to |value|. If |overwrite| is true any existing
@@ -131,7 +131,7 @@ impl CefRequest {
   pub fn set_header_by_name(&mut self, name: &crate::include::internal::CefString, value: Option<&crate::include::internal::CefString>, overwrite: bool) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_header_by_name {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),crate::include::internal::IntoCef::into_cef(value),if overwrite { 1 } else { 0 },),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,match value { Some(value) => value as *const _ as *const _, None => std::ptr::null_mut() },if overwrite { 1 } else { 0 },),
         None => panic!(),
       };
       ret
@@ -161,13 +161,13 @@ impl CefRequest {
   }
   /// Get the URL to the first party for cookies used in combination with
   /// CefURLRequest.
-  pub fn get_first_party_for_cookies(&mut self) -> crate::include::internal::CefString {
+  pub fn get_first_party_for_cookies(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_first_party_for_cookies {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Set the URL to the first party for cookies used in combination with
@@ -175,7 +175,7 @@ impl CefRequest {
   pub fn set_first_party_for_cookies(&mut self, url: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_first_party_for_cookies {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(url),),
+        Some(f) => f(self.raw.as_ptr(),match url { Some(url) => url as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret
@@ -217,7 +217,7 @@ impl CefRequest {
     }
   }
 }
-pub type CefPostData = crate::include::base::CefProxy<cef_sys::cef_post_data_t>;
+pub type CefPostData = crate::include::refcounting::CefProxy<cef_sys::cef_post_data_t>;
 #[allow(non_snake_case)]
 impl CefPostData {
   /// Create a new CefPostData object.
@@ -293,7 +293,7 @@ impl CefPostData {
     }
   }
 }
-pub type CefPostDataElement = crate::include::base::CefProxy<cef_sys::cef_post_data_element_t>;
+pub type CefPostDataElement = crate::include::refcounting::CefProxy<cef_sys::cef_post_data_element_t>;
 #[allow(non_snake_case)]
 impl CefPostDataElement {
   /// Create a new CefPostDataElement object.
@@ -328,7 +328,18 @@ impl CefPostDataElement {
   pub fn set_to_file(&mut self, fileName: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_to_file {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(fileName),),
+        Some(f) => f(self.raw.as_ptr(),fileName as *const _ as *const _,),
+        None => panic!(),
+      };
+      ret
+    }
+  }
+  /// The post data element will represent bytes.  The bytes passed
+  /// in will be copied.
+  pub fn set_to_bytes(&mut self, size: &[u8]) -> () {
+    unsafe {
+      let ret = match self.raw.as_ref().set_to_bytes {
+        Some(f) => f(self.raw.as_ptr(),size.len() as _,size.as_ptr() as *const _,),
         None => panic!(),
       };
       ret
@@ -345,13 +356,13 @@ impl CefPostDataElement {
     }
   }
   /// Return the file name.
-  pub fn get_file(&mut self) -> crate::include::internal::CefString {
+  pub fn get_file(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_file {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Return the number of bytes.
@@ -366,10 +377,10 @@ impl CefPostDataElement {
   }
   /// Read up to |size| bytes into |bytes| and return the number of bytes
   /// actually read.
-  pub fn get_bytes(&mut self, size: u64, bytes: &mut std::os::raw::c_void) -> u64 {
+  pub fn get_bytes(&mut self, size: &mut [u8]) -> u64 {
     unsafe {
       let ret = match self.raw.as_ref().get_bytes {
-        Some(f) => f(self.raw.as_ptr(),size,bytes,),
+        Some(f) => f(self.raw.as_ptr(),size.len() as _,size.as_mut_ptr() as *mut _,),
         None => panic!(),
       };
       ret

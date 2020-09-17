@@ -41,6 +41,6 @@ unsafe extern "C" fn cef_audio_handler_t_on_audio_stream_stopped(_self: *mut cef
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_audio_handler_t_on_audio_stream_error(_self: *mut cef_sys::cef_audio_handler_t, browser: *mut cef_sys::cef_browser_t, message: *const cef_sys::cef_string_t) -> () {
-  let ret = CefAudioHandler::from_cef(_self, true).get().on_audio_stream_error(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&crate::include::internal::CefString::from_cef(message).unwrap(),);
+  let ret = CefAudioHandler::from_cef(_self, true).get().on_audio_stream_error(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&*(message as *const _),);
   ret
 }

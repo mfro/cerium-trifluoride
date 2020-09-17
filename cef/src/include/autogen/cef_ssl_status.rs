@@ -1,4 +1,4 @@
-pub type CefSSLStatus = crate::include::base::CefProxy<cef_sys::cef_sslstatus_t>;
+pub type CefSSLStatus = crate::include::refcounting::CefProxy<cef_sys::cef_sslstatus_t>;
 #[allow(non_snake_case)]
 impl CefSSLStatus {
   /// Returns true if the status is related to a secure SSL/TLS connection.

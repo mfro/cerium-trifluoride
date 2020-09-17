@@ -45,26 +45,3 @@ pub trait RefHelper<T> {
 pub trait MutHelper<T>: RefHelper<T> {
     fn as_mut(&mut self) -> &mut T;
 }
-
-pub fn cef_string_to_string(src: &cef_sys::cef_string_t) -> String {
-    unsafe {
-        if src.length == 0 {
-            String::new()
-        } else {
-            let slice = std::slice::from_raw_parts(src.str_, src.length as usize);
-            String::from_utf16_lossy(slice)
-        }
-    }
-}
-
-pub fn str_to_cef_string(field: &mut cef_sys::cef_string_t, value: &str) {
-    let mut v: Vec<_> = value.encode_utf16().collect();
-    field.str_ = v.as_mut_ptr();
-    field.length = v.len() as u64;
-    field.dtor = Some(string_dtor);
-    std::mem::forget(v);
-}
-
-unsafe extern "C" fn string_dtor(str_: *mut u16) {
-    drop(Box::from_raw(str_))
-}

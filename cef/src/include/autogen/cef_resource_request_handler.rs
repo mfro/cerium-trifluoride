@@ -96,7 +96,7 @@ unsafe extern "C" fn cef_resource_request_handler_t_get_resource_handler(_self: 
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_resource_request_handler_t_on_resource_redirect(_self: *mut cef_sys::cef_resource_request_handler_t, browser: *mut cef_sys::cef_browser_t, frame: *mut cef_sys::cef_frame_t, request: *mut cef_sys::cef_request_t, response: *mut cef_sys::cef_response_t, new_url: *mut cef_sys::cef_string_t) -> () {
-  let ret = CefResourceRequestHandler::from_cef(_self, true).get().on_resource_redirect(crate::include::CefBrowser::from_cef_own(browser),crate::include::CefFrame::from_cef_own(frame),crate::include::CefRequest::from_cef_own(request).unwrap(),crate::include::CefResponse::from_cef_own(response).unwrap(),&mut crate::include::internal::CefString::from_cef(new_url).unwrap(),);
+  let ret = CefResourceRequestHandler::from_cef(_self, true).get().on_resource_redirect(crate::include::CefBrowser::from_cef_own(browser),crate::include::CefFrame::from_cef_own(frame),crate::include::CefRequest::from_cef_own(request).unwrap(),crate::include::CefResponse::from_cef_own(response).unwrap(),&mut *(new_url as *mut _),);
   ret
 }
 #[allow(non_snake_case)]

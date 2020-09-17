@@ -16,7 +16,7 @@ unsafe extern "C" fn cef_domvisitor_t_visit(_self: *mut cef_sys::cef_domvisitor_
   let ret = CefDOMVisitor::from_cef(_self, true).get().visit(crate::include::CefDOMDocument::from_cef_own(document).unwrap(),);
   ret
 }
-pub type CefDOMDocument = crate::include::base::CefProxy<cef_sys::cef_domdocument_t>;
+pub type CefDOMDocument = crate::include::refcounting::CefProxy<cef_sys::cef_domdocument_t>;
 #[allow(non_snake_case)]
 impl CefDOMDocument {
   /// Returns the document type.
@@ -60,20 +60,20 @@ impl CefDOMDocument {
     }
   }
   /// Returns the title of an HTML document.
-  pub fn get_title(&mut self) -> crate::include::internal::CefString {
+  pub fn get_title(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_title {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the document element with the specified ID value.
   pub fn get_element_by_id(&mut self, id: &crate::include::internal::CefString) -> Option<crate::include::CefDOMNode> {
     unsafe {
       let ret = match self.raw.as_ref().get_element_by_id {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(id),),
+        Some(f) => f(self.raw.as_ptr(),id as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefDOMNode::from_cef_own(ret)
@@ -120,48 +120,48 @@ impl CefDOMDocument {
     }
   }
   /// Returns the contents of this selection as markup.
-  pub fn get_selection_as_markup(&mut self) -> crate::include::internal::CefString {
+  pub fn get_selection_as_markup(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_selection_as_markup {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the contents of this selection as text.
-  pub fn get_selection_as_text(&mut self) -> crate::include::internal::CefString {
+  pub fn get_selection_as_text(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_selection_as_text {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the base URL for the document.
-  pub fn get_base_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_base_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_base_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns a complete URL based on the document base URL and the specified
   /// partial URL.
-  pub fn get_complete_url(&mut self, partialURL: &crate::include::internal::CefString) -> crate::include::internal::CefString {
+  pub fn get_complete_url(&mut self, partialURL: &crate::include::internal::CefString) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_complete_url {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(partialURL),),
+        Some(f) => f(self.raw.as_ptr(),partialURL as *const _ as *const _,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
 }
-pub type CefDOMNode = crate::include::base::CefProxy<cef_sys::cef_domnode_t>;
+pub type CefDOMNode = crate::include::refcounting::CefProxy<cef_sys::cef_domnode_t>;
 #[allow(non_snake_case)]
 impl CefDOMNode {
   /// Returns the type for this node.
@@ -215,13 +215,13 @@ impl CefDOMNode {
     }
   }
   /// Returns the type of this form control element node.
-  pub fn get_form_control_element_type(&mut self) -> crate::include::internal::CefString {
+  pub fn get_form_control_element_type(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_form_control_element_type {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns true if this object is pointing to the same handle as |that|
@@ -236,43 +236,43 @@ impl CefDOMNode {
     }
   }
   /// Returns the name of this node.
-  pub fn get_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the value of this node.
-  pub fn get_value(&mut self) -> crate::include::internal::CefString {
+  pub fn get_value(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_value {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Set the value of this node. Returns true on success.
   pub fn set_value(&mut self, value: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_value {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(value),),
+        Some(f) => f(self.raw.as_ptr(),value as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
     }
   }
   /// Returns the contents of this node as markup.
-  pub fn get_as_markup(&mut self) -> crate::include::internal::CefString {
+  pub fn get_as_markup(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_as_markup {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the document associated with this node.
@@ -347,13 +347,13 @@ impl CefDOMNode {
   }
   /// The following methods are valid only for element nodes.
   /// Returns the tag name of this element.
-  pub fn get_element_tag_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_element_tag_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_element_tag_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns true if this element has attributes.
@@ -370,20 +370,20 @@ impl CefDOMNode {
   pub fn has_element_attribute(&mut self, attrName: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().has_element_attribute {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(attrName),),
+        Some(f) => f(self.raw.as_ptr(),attrName as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
     }
   }
   /// Returns the element attribute named |attrName|.
-  pub fn get_element_attribute(&mut self, attrName: &crate::include::internal::CefString) -> crate::include::internal::CefString {
+  pub fn get_element_attribute(&mut self, attrName: &crate::include::internal::CefString) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_element_attribute {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(attrName),),
+        Some(f) => f(self.raw.as_ptr(),attrName as *const _ as *const _,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Set the value for the element attribute named |attrName|. Returns true on
@@ -391,20 +391,20 @@ impl CefDOMNode {
   pub fn set_element_attribute(&mut self, attrName: &crate::include::internal::CefString, value: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_element_attribute {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(attrName),crate::include::internal::IntoCef::into_cef(value),),
+        Some(f) => f(self.raw.as_ptr(),attrName as *const _ as *const _,value as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
     }
   }
   /// Returns the inner text of the element.
-  pub fn get_element_inner_text(&mut self) -> crate::include::internal::CefString {
+  pub fn get_element_inner_text(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_element_inner_text {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the bounds of the element.

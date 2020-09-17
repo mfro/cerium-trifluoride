@@ -11,7 +11,7 @@ macro_rules! translate_cef_ptr {
     ( $ptr:expr ) => {{
         let ptr = ($ptr as *mut *const u8).offset(-1);
         let ptr = (ptr as *mut std::sync::atomic::AtomicUsize).offset(-1);
-        &mut *(ptr as *mut crate::include::base::CefShim)
+        &mut *(ptr as *mut crate::include::refcounting::CefShim)
     }};
 }
 
@@ -195,7 +195,7 @@ pub struct DynObject {
 
 macro_rules! define_refcounted {
     ( $trait_name:ident, $object_name:ident, $c_name:ident, $( $method: ident: $c_method: ident, )* ) => {
-        pub type $object_name = crate::include::base::CefObject<dyn $trait_name, cef_sys::$c_name>;
+        pub type $object_name = crate::include::refcounting::CefObject<dyn $trait_name, cef_sys::$c_name>;
 
         impl $object_name {
             pub unsafe fn from_cef(ptr: *mut cef_sys::$c_name, self_ref: bool) -> $object_name {
@@ -211,7 +211,7 @@ macro_rules! define_refcounted {
 
                 // relies on the layout of `&dyn Trait` as described here:
                 // https://rust-lang.github.io/unsafe-code-guidelines/layout/pointers.html#notes
-                let fat_pointer = crate::base::DynObject {
+                let fat_pointer = crate::include::refcounting::DynObject {
                     data: shim as *const _ as *const u8,
                     vtable: shim.vtable,
                 };
@@ -226,7 +226,7 @@ macro_rules! define_refcounted {
                 // The 'init_ref_count' fn is preferable to initializing that field directly
                 // in this macro as that would require increasing the visibility on the extern
                 // fns at the top of this file.
-                let base = crate::include::base::init_ref_count::<cef_sys::$c_name>();
+                let base = crate::include::refcounting::init_ref_count::<cef_sys::$c_name>();
 
                 // Initialize the cef vtable struct, using Default::default() to null-initialize
                 // any methods that are not implemented in rust. This reduces the amount of
@@ -247,7 +247,7 @@ macro_rules! define_refcounted {
                 // We can be sure that, excepting bugs in this implementation, the rust calls will
                 // all be appropriate, but we are trusting that CEF refcounts properly and doesn't
                 // cause us any memory concerns
-                let wrapper: Box<crate::include::base::CefObjectImplInner<dyn $trait_name, cef_sys::$c_name>> = Box::new(crate::include::base::CefObjectImplInner {
+                let wrapper: Box<crate::include::refcounting::CefObjectImplInner<dyn $trait_name, cef_sys::$c_name>> = Box::new(crate::include::refcounting::CefObjectImplInner {
                     count: std::sync::atomic::AtomicUsize::new(1),
                     raw,
                     vtable: std::ptr::null_mut(),
@@ -259,7 +259,7 @@ macro_rules! define_refcounted {
                 unsafe {
                     // relies on the layout of `&dyn Trait` as described here:
                     // https://rust-lang.github.io/unsafe-code-guidelines/layout/pointers.html#notes
-                    let x = &ptr as *const _ as *const crate::include::base::DynObject;
+                    let x = &ptr as *const _ as *const crate::include::refcounting::DynObject;
                     (*ptr).vtable = (*x).vtable;
                 }
 
@@ -267,7 +267,7 @@ macro_rules! define_refcounted {
 
                 // leak the object from the box, we are now taking responsibility for keeping track of it.
                 let ptr = std::ptr::NonNull::new(ptr).unwrap();
-                crate::include::base::CefObject { ptr }
+                crate::include::refcounting::CefObject { ptr }
             }
         }
 

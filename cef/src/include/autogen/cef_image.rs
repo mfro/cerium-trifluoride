@@ -1,4 +1,4 @@
-pub type CefImage = crate::include::base::CefProxy<cef_sys::cef_image_t>;
+pub type CefImage = crate::include::refcounting::CefProxy<cef_sys::cef_image_t>;
 #[allow(non_snake_case)]
 impl CefImage {
   /// Create a new CefImage. It will initially be empty. Use the Add*() methods
@@ -26,6 +26,44 @@ impl CefImage {
     unsafe {
       let ret = match self.raw.as_ref().is_same {
         Some(f) => f(self.raw.as_ptr(),crate::include::CefImage::to_cef_own(that),),
+        None => panic!(),
+      };
+      if ret == 0 { false } else { true }
+    }
+  }
+  /// Add a bitmap image representation for |scale_factor|. Only 32-bit RGBA/BGRA
+  /// formats are supported. |pixel_width| and |pixel_height| are the bitmap
+  /// representation size in pixel coordinates. |pixel_data| is the array of
+  /// pixel data and should be |pixel_width| x |pixel_height| x 4 bytes in size.
+  /// |color_type| and |alpha_type| values specify the pixel format.
+  pub fn add_bitmap(&mut self, scale_factor: f32, pixel_width: i32, pixel_height: i32, color_type: crate::include::internal::CefColorType, alpha_type: crate::include::internal::CefAlphaType, pixel_data: &[u8]) -> bool {
+    unsafe {
+      let ret = match self.raw.as_ref().add_bitmap {
+        Some(f) => f(self.raw.as_ptr(),scale_factor,pixel_width,pixel_height,color_type.into(),alpha_type.into(),pixel_data.as_ptr() as *const _,pixel_data.len() as _,),
+        None => panic!(),
+      };
+      if ret == 0 { false } else { true }
+    }
+  }
+  /// Add a PNG image representation for |scale_factor|. |png_data| is the image
+  /// data of size |png_data_size|. Any alpha transparency in the PNG data will
+  /// be maintained.
+  pub fn add_png(&mut self, scale_factor: f32, png_data: &[u8]) -> bool {
+    unsafe {
+      let ret = match self.raw.as_ref().add_png {
+        Some(f) => f(self.raw.as_ptr(),scale_factor,png_data.as_ptr() as *const _,png_data.len() as _,),
+        None => panic!(),
+      };
+      if ret == 0 { false } else { true }
+    }
+  }
+  /// Create a JPEG image representation for |scale_factor|. |jpeg_data| is the
+  /// image data of size |jpeg_data_size|. The JPEG format does not support
+  /// transparency so the alpha byte will be set to 0xFF for all pixels.
+  pub fn add_jpeg(&mut self, scale_factor: f32, jpeg_data: &[u8]) -> bool {
+    unsafe {
+      let ret = match self.raw.as_ref().add_jpeg {
+        Some(f) => f(self.raw.as_ptr(),scale_factor,jpeg_data.as_ptr() as *const _,jpeg_data.len() as _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }

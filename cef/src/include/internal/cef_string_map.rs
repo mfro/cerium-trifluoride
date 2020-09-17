@@ -2,15 +2,11 @@ use cef_sys::cef_string_map_t;
 
 pub struct CefStringMap {
     raw: cef_string_map_t,
-    userfree: Option<fn(cef_string_map_t)>,
 }
 
 impl From<cef_string_map_t> for CefStringMap {
     fn from(raw: cef_string_map_t) -> Self {
-        CefStringMap {
-            raw,
-            userfree: None,
-        }
+        CefStringMap { raw }
     }
 }
 

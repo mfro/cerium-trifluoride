@@ -1,4 +1,4 @@
-pub type CefRequestCallback = crate::include::base::CefProxy<cef_sys::cef_request_callback_t>;
+pub type CefRequestCallback = crate::include::refcounting::CefProxy<cef_sys::cef_request_callback_t>;
 #[allow(non_snake_case)]
 impl CefRequestCallback {
   /// Continue the url request. If |allow| is true the request will be continued.

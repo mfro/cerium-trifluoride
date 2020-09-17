@@ -1,4 +1,4 @@
-pub type CefCallback = crate::include::base::CefProxy<cef_sys::cef_callback_t>;
+pub type CefCallback = crate::include::refcounting::CefProxy<cef_sys::cef_callback_t>;
 #[allow(non_snake_case)]
 impl CefCallback {
   /// Continue processing.

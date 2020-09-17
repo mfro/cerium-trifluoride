@@ -1,4 +1,4 @@
-pub type CefURLRequest = crate::include::base::CefProxy<cef_sys::cef_urlrequest_t>;
+pub type CefURLRequest = crate::include::refcounting::CefProxy<cef_sys::cef_urlrequest_t>;
 #[allow(non_snake_case)]
 impl CefURLRequest {
   /// Create a new URL request that is not associated with a specific browser or
@@ -122,6 +122,10 @@ pub trait URLRequestClient {
   /// bytes received up to the call and |total| is the expected total size of the
   /// response (or -1 if not determined).
   fn on_download_progress(&mut self, request: crate::include::CefURLRequest, current: i64, total: i64) -> () { Default::default() }
+  /// Called when some part of the response is read. |data| contains the current
+  /// bytes received since the last call. This method will not be called if the
+  /// UR_FLAG_NO_DOWNLOAD_DATA flag is set on the request.
+  fn on_download_data(&mut self, request: crate::include::CefURLRequest, data: &[u8]) -> () { Default::default() }
   /// Called on the IO thread when the browser needs credentials from the user.
   /// |isProxy| indicates whether the host is a proxy server. |host| contains the
   /// hostname and |port| contains the port number. Return true to continue the
@@ -133,7 +137,7 @@ pub trait URLRequestClient {
   /// be called for requests initiated from the browser process.
   fn get_auth_credentials(&mut self, isProxy: bool, host: &crate::include::internal::CefString, port: i32, realm: Option<&crate::include::internal::CefString>, scheme: &crate::include::internal::CefString, callback: crate::include::CefAuthCallback) -> bool { Default::default() }
 }
-define_refcounted!(URLRequestClient, CefURLRequestClient, cef_urlrequest_client_t, on_request_complete: cef_urlrequest_client_t_on_request_complete,on_upload_progress: cef_urlrequest_client_t_on_upload_progress,on_download_progress: cef_urlrequest_client_t_on_download_progress,get_auth_credentials: cef_urlrequest_client_t_get_auth_credentials,);
+define_refcounted!(URLRequestClient, CefURLRequestClient, cef_urlrequest_client_t, on_request_complete: cef_urlrequest_client_t_on_request_complete,on_upload_progress: cef_urlrequest_client_t_on_upload_progress,on_download_progress: cef_urlrequest_client_t_on_download_progress,on_download_data: cef_urlrequest_client_t_on_download_data,get_auth_credentials: cef_urlrequest_client_t_get_auth_credentials,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_urlrequest_client_t_on_request_complete(_self: *mut cef_sys::cef_urlrequest_client_t, request: *mut cef_sys::cef_urlrequest_t) -> () {
   let ret = CefURLRequestClient::from_cef(_self, true).get().on_request_complete(crate::include::CefURLRequest::from_cef_own(request).unwrap(),);
@@ -150,7 +154,12 @@ unsafe extern "C" fn cef_urlrequest_client_t_on_download_progress(_self: *mut ce
   ret
 }
 #[allow(non_snake_case)]
+unsafe extern "C" fn cef_urlrequest_client_t_on_download_data(_self: *mut cef_sys::cef_urlrequest_client_t, request: *mut cef_sys::cef_urlrequest_t, data0: *const std::os::raw::c_void, data1: u64) -> () {
+  let ret = CefURLRequestClient::from_cef(_self, true).get().on_download_data(crate::include::CefURLRequest::from_cef_own(request).unwrap(),std::slice::from_raw_parts(data0 as *const _, data1 as _),);
+  ret
+}
+#[allow(non_snake_case)]
 unsafe extern "C" fn cef_urlrequest_client_t_get_auth_credentials(_self: *mut cef_sys::cef_urlrequest_client_t, isProxy: i32, host: *const cef_sys::cef_string_t, port: i32, realm: *const cef_sys::cef_string_t, scheme: *const cef_sys::cef_string_t, callback: *mut cef_sys::cef_auth_callback_t) -> i32 {
-  let ret = CefURLRequestClient::from_cef(_self, true).get().get_auth_credentials(if isProxy == 0 { false } else { true },&crate::include::internal::CefString::from_cef(host).unwrap(),port,match &crate::include::internal::CefString::from_cef(realm) { Some(ref x) => Some(x), None => None },&crate::include::internal::CefString::from_cef(scheme).unwrap(),crate::include::CefAuthCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefURLRequestClient::from_cef(_self, true).get().get_auth_credentials(if isProxy == 0 { false } else { true },&*(host as *const _),port,if realm.is_null() { None } else { Some(&*(realm as *const _)) },&*(scheme as *const _),crate::include::CefAuthCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }

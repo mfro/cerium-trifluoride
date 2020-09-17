@@ -1,44 +1,44 @@
-pub type CefWebPluginInfo = crate::include::base::CefProxy<cef_sys::cef_web_plugin_info_t>;
+pub type CefWebPluginInfo = crate::include::refcounting::CefProxy<cef_sys::cef_web_plugin_info_t>;
 #[allow(non_snake_case)]
 impl CefWebPluginInfo {
   /// Returns the plugin name (i.e. Flash).
-  pub fn get_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the plugin file path (DLL/bundle/library).
-  pub fn get_path(&mut self) -> crate::include::internal::CefString {
+  pub fn get_path(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_path {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the version of the plugin (may be OS-specific).
-  pub fn get_version(&mut self) -> crate::include::internal::CefString {
+  pub fn get_version(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_version {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns a description of the plugin from the version information.
-  pub fn get_description(&mut self) -> crate::include::internal::CefString {
+  pub fn get_description(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_description {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
 }
@@ -72,7 +72,7 @@ pub trait WebPluginUnstableCallback {
 define_refcounted!(WebPluginUnstableCallback, CefWebPluginUnstableCallback, cef_web_plugin_unstable_callback_t, is_unstable: cef_web_plugin_unstable_callback_t_is_unstable,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_web_plugin_unstable_callback_t_is_unstable(_self: *mut cef_sys::cef_web_plugin_unstable_callback_t, path: *const cef_sys::cef_string_t, unstable: i32) -> () {
-  let ret = CefWebPluginUnstableCallback::from_cef(_self, true).get().is_unstable(&crate::include::internal::CefString::from_cef(path).unwrap(),if unstable == 0 { false } else { true },);
+  let ret = CefWebPluginUnstableCallback::from_cef(_self, true).get().is_unstable(&*(path as *const _),if unstable == 0 { false } else { true },);
   ret
 }
 /// Implement this interface to receive notification when CDM registration is
@@ -90,7 +90,7 @@ pub trait RegisterCdmCallback {
 define_refcounted!(RegisterCdmCallback, CefRegisterCdmCallback, cef_register_cdm_callback_t, on_cdm_registration_complete: cef_register_cdm_callback_t_on_cdm_registration_complete,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_register_cdm_callback_t_on_cdm_registration_complete(_self: *mut cef_sys::cef_register_cdm_callback_t, result: cef_sys::cef_cdm_registration_error_t, error_message: *const cef_sys::cef_string_t) -> () {
-  let ret = CefRegisterCdmCallback::from_cef(_self, true).get().on_cdm_registration_complete(result.into(),match &crate::include::internal::CefString::from_cef(error_message) { Some(ref x) => Some(x), None => None },);
+  let ret = CefRegisterCdmCallback::from_cef(_self, true).get().on_cdm_registration_complete(result.into(),if error_message.is_null() { None } else { Some(&*(error_message as *const _)) },);
   ret
 }
 /// Visit web plugin information. Can be called on any thread in the browser
@@ -118,7 +118,7 @@ pub fn cef_refresh_web_plugins() -> () {
 #[allow(non_snake_case)]
 pub fn cef_unregister_internal_web_plugin(path: &crate::include::internal::CefString, ) -> () {
   unsafe {
-    let ret = cef_sys::cef_unregister_internal_web_plugin(crate::include::internal::IntoCef::into_cef(path),);
+    let ret = cef_sys::cef_unregister_internal_web_plugin(path as *const _ as *const _,);
     ret
   }
 }
@@ -127,7 +127,7 @@ pub fn cef_unregister_internal_web_plugin(path: &crate::include::internal::CefSt
 #[allow(non_snake_case)]
 pub fn cef_register_web_plugin_crash(path: &crate::include::internal::CefString, ) -> () {
   unsafe {
-    let ret = cef_sys::cef_register_web_plugin_crash(crate::include::internal::IntoCef::into_cef(path),);
+    let ret = cef_sys::cef_register_web_plugin_crash(path as *const _ as *const _,);
     ret
   }
 }
@@ -136,7 +136,7 @@ pub fn cef_register_web_plugin_crash(path: &crate::include::internal::CefString,
 #[allow(non_snake_case)]
 pub fn cef_is_web_plugin_unstable(path: &crate::include::internal::CefString, callback: crate::include::CefWebPluginUnstableCallback, ) -> () {
   unsafe {
-    let ret = cef_sys::cef_is_web_plugin_unstable(crate::include::internal::IntoCef::into_cef(path),crate::include::CefWebPluginUnstableCallback::to_cef_own(callback),);
+    let ret = cef_sys::cef_is_web_plugin_unstable(path as *const _ as *const _,crate::include::CefWebPluginUnstableCallback::to_cef_own(callback),);
     ret
   }
 }
@@ -182,7 +182,7 @@ pub fn cef_is_web_plugin_unstable(path: &crate::include::internal::CefString, ca
 #[allow(non_snake_case)]
 pub fn cef_register_widevine_cdm(path: &crate::include::internal::CefString, callback: Option<crate::include::CefRegisterCdmCallback>, ) -> () {
   unsafe {
-    let ret = cef_sys::cef_register_widevine_cdm(crate::include::internal::IntoCef::into_cef(path),callback.map_or(std::ptr::null_mut(), |o| crate::include::CefRegisterCdmCallback::to_cef_own(o)),);
+    let ret = cef_sys::cef_register_widevine_cdm(path as *const _ as *const _,callback.map_or(std::ptr::null_mut(), |o| crate::include::CefRegisterCdmCallback::to_cef_own(o)),);
     ret
   }
 }

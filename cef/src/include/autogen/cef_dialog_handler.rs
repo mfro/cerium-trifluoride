@@ -1,4 +1,4 @@
-pub type CefFileDialogCallback = crate::include::base::CefProxy<cef_sys::cef_file_dialog_callback_t>;
+pub type CefFileDialogCallback = crate::include::refcounting::CefProxy<cef_sys::cef_file_dialog_callback_t>;
 #[allow(non_snake_case)]
 impl CefFileDialogCallback {
   /// Continue the file selection. |selected_accept_filter| should be the 0-based
@@ -49,6 +49,6 @@ pub trait DialogHandler {
 define_refcounted!(DialogHandler, CefDialogHandler, cef_dialog_handler_t, on_file_dialog: cef_dialog_handler_t_on_file_dialog,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_dialog_handler_t_on_file_dialog(_self: *mut cef_sys::cef_dialog_handler_t, browser: *mut cef_sys::cef_browser_t, mode: cef_sys::cef_file_dialog_mode_t, title: *const cef_sys::cef_string_t, default_file_path: *const cef_sys::cef_string_t, accept_filters: cef_sys::cef_string_list_t, selected_accept_filter: i32, callback: *mut cef_sys::cef_file_dialog_callback_t) -> i32 {
-  let ret = CefDialogHandler::from_cef(_self, true).get().on_file_dialog(crate::include::CefBrowser::from_cef_own(browser).unwrap(),mode.into(),match &crate::include::internal::CefString::from_cef(title) { Some(ref x) => Some(x), None => None },match &crate::include::internal::CefString::from_cef(default_file_path) { Some(ref x) => Some(x), None => None },&accept_filters.into(),selected_accept_filter,crate::include::CefFileDialogCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefDialogHandler::from_cef(_self, true).get().on_file_dialog(crate::include::CefBrowser::from_cef_own(browser).unwrap(),mode.into(),if title.is_null() { None } else { Some(&*(title as *const _)) },if default_file_path.is_null() { None } else { Some(&*(default_file_path as *const _)) },&accept_filters.into(),selected_accept_filter,crate::include::CefFileDialogCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }

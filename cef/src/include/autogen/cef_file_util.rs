@@ -5,7 +5,7 @@
 #[allow(non_snake_case)]
 pub fn cef_create_directory(full_path: &crate::include::internal::CefString, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_create_directory(crate::include::internal::IntoCef::into_cef(full_path),);
+    let ret = cef_sys::cef_create_directory(full_path as *const _ as *const _,);
     if ret == 0 { false } else { true }
   }
 }
@@ -18,7 +18,7 @@ pub fn cef_create_directory(full_path: &crate::include::internal::CefString, ) -
 #[allow(non_snake_case)]
 pub fn cef_get_temp_directory(temp_dir: &mut crate::include::internal::CefString, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_get_temp_directory(crate::include::internal::IntoCef::into_cef(temp_dir),);
+    let ret = cef_sys::cef_get_temp_directory(temp_dir as *mut _ as *mut _,);
     if ret == 0 { false } else { true }
   }
 }
@@ -30,7 +30,7 @@ pub fn cef_get_temp_directory(temp_dir: &mut crate::include::internal::CefString
 #[allow(non_snake_case)]
 pub fn cef_create_new_temp_directory(prefix: Option<&crate::include::internal::CefString>, new_temp_path: &mut crate::include::internal::CefString, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_create_new_temp_directory(crate::include::internal::IntoCef::into_cef(prefix),crate::include::internal::IntoCef::into_cef(new_temp_path),);
+    let ret = cef_sys::cef_create_new_temp_directory(match prefix { Some(prefix) => prefix as *const _ as *const _, None => std::ptr::null_mut() },new_temp_path as *mut _ as *mut _,);
     if ret == 0 { false } else { true }
   }
 }
@@ -43,7 +43,7 @@ pub fn cef_create_new_temp_directory(prefix: Option<&crate::include::internal::C
 #[allow(non_snake_case)]
 pub fn cef_create_temp_directory_in_directory(base_dir: &crate::include::internal::CefString, prefix: Option<&crate::include::internal::CefString>, new_dir: &mut crate::include::internal::CefString, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_create_temp_directory_in_directory(crate::include::internal::IntoCef::into_cef(base_dir),crate::include::internal::IntoCef::into_cef(prefix),crate::include::internal::IntoCef::into_cef(new_dir),);
+    let ret = cef_sys::cef_create_temp_directory_in_directory(base_dir as *const _ as *const _,match prefix { Some(prefix) => prefix as *const _ as *const _, None => std::ptr::null_mut() },new_dir as *mut _ as *mut _,);
     if ret == 0 { false } else { true }
   }
 }
@@ -52,7 +52,7 @@ pub fn cef_create_temp_directory_in_directory(base_dir: &crate::include::interna
 #[allow(non_snake_case)]
 pub fn cef_directory_exists(path: &crate::include::internal::CefString, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_directory_exists(crate::include::internal::IntoCef::into_cef(path),);
+    let ret = cef_sys::cef_directory_exists(path as *const _ as *const _,);
     if ret == 0 { false } else { true }
   }
 }
@@ -66,7 +66,7 @@ pub fn cef_directory_exists(path: &crate::include::internal::CefString, ) -> boo
 #[allow(non_snake_case)]
 pub fn cef_delete_file(path: &crate::include::internal::CefString, recursive: bool, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_delete_file(crate::include::internal::IntoCef::into_cef(path),if recursive { 1 } else { 0 },);
+    let ret = cef_sys::cef_delete_file(path as *const _ as *const _,if recursive { 1 } else { 0 },);
     if ret == 0 { false } else { true }
   }
 }
@@ -77,7 +77,7 @@ pub fn cef_delete_file(path: &crate::include::internal::CefString, recursive: bo
 #[allow(non_snake_case)]
 pub fn cef_zip_directory(src_dir: &crate::include::internal::CefString, dest_file: &crate::include::internal::CefString, include_hidden_files: bool, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_zip_directory(crate::include::internal::IntoCef::into_cef(src_dir),crate::include::internal::IntoCef::into_cef(dest_file),if include_hidden_files { 1 } else { 0 },);
+    let ret = cef_sys::cef_zip_directory(src_dir as *const _ as *const _,dest_file as *const _ as *const _,if include_hidden_files { 1 } else { 0 },);
     if ret == 0 { false } else { true }
   }
 }
@@ -90,7 +90,7 @@ pub fn cef_zip_directory(src_dir: &crate::include::internal::CefString, dest_fil
 #[allow(non_snake_case)]
 pub fn cef_load_crlsets_file(path: &crate::include::internal::CefString, ) -> () {
   unsafe {
-    let ret = cef_sys::cef_load_crlsets_file(crate::include::internal::IntoCef::into_cef(path),);
+    let ret = cef_sys::cef_load_crlsets_file(path as *const _ as *const _,);
     ret
   }
 }

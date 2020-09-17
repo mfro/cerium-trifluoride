@@ -1,11 +1,11 @@
-pub type CefProcessMessage = crate::include::base::CefProxy<cef_sys::cef_process_message_t>;
+pub type CefProcessMessage = crate::include::refcounting::CefProxy<cef_sys::cef_process_message_t>;
 #[allow(non_snake_case)]
 impl CefProcessMessage {
   /// Create a new CefProcessMessage object with the specified name.
   #[allow(non_snake_case)]
   pub fn create(name: &crate::include::internal::CefString, ) -> Option<crate::include::CefProcessMessage> {
     unsafe {
-      let ret = cef_sys::cef_process_message_create(crate::include::internal::IntoCef::into_cef(name),);
+      let ret = cef_sys::cef_process_message_create(name as *const _ as *const _,);
       crate::include::CefProcessMessage::from_cef_own(ret)
     }
   }
@@ -42,13 +42,13 @@ impl CefProcessMessage {
     }
   }
   /// Returns the message name.
-  pub fn get_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the list of arguments.

@@ -8,6 +8,6 @@ pub trait StringVisitor {
 define_refcounted!(StringVisitor, CefStringVisitor, cef_string_visitor_t, visit: cef_string_visitor_t_visit,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_string_visitor_t_visit(_self: *mut cef_sys::cef_string_visitor_t, string: *const cef_sys::cef_string_t) -> () {
-  let ret = CefStringVisitor::from_cef(_self, true).get().visit(match &crate::include::internal::CefString::from_cef(string) { Some(ref x) => Some(x), None => None },);
+  let ret = CefStringVisitor::from_cef(_self, true).get().visit(if string.is_null() { None } else { Some(&*(string as *const _)) },);
   ret
 }

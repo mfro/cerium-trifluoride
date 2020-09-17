@@ -16,7 +16,7 @@ unsafe extern "C" fn cef_task_t_execute(_self: *mut cef_sys::cef_task_t) -> () {
   let ret = CefTask::from_cef(_self, true).get().execute();
   ret
 }
-pub type CefTaskRunner = crate::include::base::CefProxy<cef_sys::cef_task_runner_t>;
+pub type CefTaskRunner = crate::include::refcounting::CefProxy<cef_sys::cef_task_runner_t>;
 #[allow(non_snake_case)]
 impl CefTaskRunner {
   /// Returns the task runner for the current thread. Only CEF threads will have

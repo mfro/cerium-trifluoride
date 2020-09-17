@@ -33,7 +33,7 @@ pub trait App {
 define_refcounted!(App, CefApp, cef_app_t, on_before_command_line_processing: cef_app_t_on_before_command_line_processing,on_register_custom_schemes: cef_app_t_on_register_custom_schemes,get_resource_bundle_handler: cef_app_t_get_resource_bundle_handler,get_browser_process_handler: cef_app_t_get_browser_process_handler,get_render_process_handler: cef_app_t_get_render_process_handler,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_app_t_on_before_command_line_processing(_self: *mut cef_sys::cef_app_t, process_type: *const cef_sys::cef_string_t, command_line: *mut cef_sys::cef_command_line_t) -> () {
-  let ret = CefApp::from_cef(_self, true).get().on_before_command_line_processing(match &crate::include::internal::CefString::from_cef(process_type) { Some(ref x) => Some(x), None => None },crate::include::CefCommandLine::from_cef_own(command_line).unwrap(),);
+  let ret = CefApp::from_cef(_self, true).get().on_before_command_line_processing(if process_type.is_null() { None } else { Some(&*(process_type as *const _)) },crate::include::CefCommandLine::from_cef_own(command_line).unwrap(),);
   ret
 }
 #[allow(non_snake_case)]

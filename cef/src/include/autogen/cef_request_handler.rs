@@ -1,4 +1,4 @@
-pub type CefSelectClientCertificateCallback = crate::include::base::CefProxy<cef_sys::cef_select_client_certificate_callback_t>;
+pub type CefSelectClientCertificateCallback = crate::include::refcounting::CefProxy<cef_sys::cef_select_client_certificate_callback_t>;
 #[allow(non_snake_case)]
 impl CefSelectClientCertificateCallback {
   /// Chooses the specified certificate for client certificate authentication.
@@ -106,34 +106,34 @@ unsafe extern "C" fn cef_request_handler_t_on_before_browse(_self: *mut cef_sys:
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_request_handler_t_on_open_urlfrom_tab(_self: *mut cef_sys::cef_request_handler_t, browser: *mut cef_sys::cef_browser_t, frame: *mut cef_sys::cef_frame_t, target_url: *const cef_sys::cef_string_t, target_disposition: cef_sys::cef_window_open_disposition_t, user_gesture: i32) -> i32 {
-  let ret = CefRequestHandler::from_cef(_self, true).get().on_open_urlfrom_tab(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),&crate::include::internal::CefString::from_cef(target_url).unwrap(),target_disposition.into(),if user_gesture == 0 { false } else { true },);
+  let ret = CefRequestHandler::from_cef(_self, true).get().on_open_urlfrom_tab(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),&*(target_url as *const _),target_disposition.into(),if user_gesture == 0 { false } else { true },);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_request_handler_t_get_resource_request_handler(_self: *mut cef_sys::cef_request_handler_t, browser: *mut cef_sys::cef_browser_t, frame: *mut cef_sys::cef_frame_t, request: *mut cef_sys::cef_request_t, is_navigation: i32, is_download: i32, request_initiator: *const cef_sys::cef_string_t, disable_default_handling: *mut i32) -> *mut cef_sys::cef_resource_request_handler_t {
   let mut disable_default_handling__tmp = if *disable_default_handling == 0 { false } else { true };
-  let ret = CefRequestHandler::from_cef(_self, true).get().get_resource_request_handler(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),crate::include::CefRequest::from_cef_own(request).unwrap(),if is_navigation == 0 { false } else { true },if is_download == 0 { false } else { true },match &crate::include::internal::CefString::from_cef(request_initiator) { Some(ref x) => Some(x), None => None },&mut disable_default_handling__tmp,);
+  let ret = CefRequestHandler::from_cef(_self, true).get().get_resource_request_handler(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),crate::include::CefRequest::from_cef_own(request).unwrap(),if is_navigation == 0 { false } else { true },if is_download == 0 { false } else { true },if request_initiator.is_null() { None } else { Some(&*(request_initiator as *const _)) },&mut disable_default_handling__tmp,);
   *disable_default_handling = if disable_default_handling__tmp { 1 } else { 0 };
   ret.map_or(std::ptr::null_mut(), |o| crate::include::CefResourceRequestHandler::to_cef_own(o))
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_request_handler_t_get_auth_credentials(_self: *mut cef_sys::cef_request_handler_t, browser: *mut cef_sys::cef_browser_t, origin_url: *const cef_sys::cef_string_t, isProxy: i32, host: *const cef_sys::cef_string_t, port: i32, realm: *const cef_sys::cef_string_t, scheme: *const cef_sys::cef_string_t, callback: *mut cef_sys::cef_auth_callback_t) -> i32 {
-  let ret = CefRequestHandler::from_cef(_self, true).get().get_auth_credentials(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&crate::include::internal::CefString::from_cef(origin_url).unwrap(),if isProxy == 0 { false } else { true },&crate::include::internal::CefString::from_cef(host).unwrap(),port,match &crate::include::internal::CefString::from_cef(realm) { Some(ref x) => Some(x), None => None },match &crate::include::internal::CefString::from_cef(scheme) { Some(ref x) => Some(x), None => None },crate::include::CefAuthCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefRequestHandler::from_cef(_self, true).get().get_auth_credentials(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&*(origin_url as *const _),if isProxy == 0 { false } else { true },&*(host as *const _),port,if realm.is_null() { None } else { Some(&*(realm as *const _)) },if scheme.is_null() { None } else { Some(&*(scheme as *const _)) },crate::include::CefAuthCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_request_handler_t_on_quota_request(_self: *mut cef_sys::cef_request_handler_t, browser: *mut cef_sys::cef_browser_t, origin_url: *const cef_sys::cef_string_t, new_size: i64, callback: *mut cef_sys::cef_request_callback_t) -> i32 {
-  let ret = CefRequestHandler::from_cef(_self, true).get().on_quota_request(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&crate::include::internal::CefString::from_cef(origin_url).unwrap(),new_size,crate::include::CefRequestCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefRequestHandler::from_cef(_self, true).get().on_quota_request(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&*(origin_url as *const _),new_size,crate::include::CefRequestCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_request_handler_t_on_certificate_error(_self: *mut cef_sys::cef_request_handler_t, browser: *mut cef_sys::cef_browser_t, cert_error: cef_sys::cef_errorcode_t, request_url: *const cef_sys::cef_string_t, ssl_info: *mut cef_sys::cef_sslinfo_t, callback: *mut cef_sys::cef_request_callback_t) -> i32 {
-  let ret = CefRequestHandler::from_cef(_self, true).get().on_certificate_error(crate::include::CefBrowser::from_cef_own(browser).unwrap(),cert_error.into(),&crate::include::internal::CefString::from_cef(request_url).unwrap(),crate::include::CefSSLInfo::from_cef_own(ssl_info).unwrap(),crate::include::CefRequestCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefRequestHandler::from_cef(_self, true).get().on_certificate_error(crate::include::CefBrowser::from_cef_own(browser).unwrap(),cert_error.into(),&*(request_url as *const _),crate::include::CefSSLInfo::from_cef_own(ssl_info).unwrap(),crate::include::CefRequestCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_request_handler_t_on_plugin_crashed(_self: *mut cef_sys::cef_request_handler_t, browser: *mut cef_sys::cef_browser_t, plugin_path: *const cef_sys::cef_string_t) -> () {
-  let ret = CefRequestHandler::from_cef(_self, true).get().on_plugin_crashed(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&crate::include::internal::CefString::from_cef(plugin_path).unwrap(),);
+  let ret = CefRequestHandler::from_cef(_self, true).get().on_plugin_crashed(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&*(plugin_path as *const _),);
   ret
 }
 #[allow(non_snake_case)]

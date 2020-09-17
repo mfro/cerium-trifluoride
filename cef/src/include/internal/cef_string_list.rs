@@ -2,15 +2,11 @@ use cef_sys::cef_string_list_t;
 
 pub struct CefStringList {
     raw: cef_string_list_t,
-    userfree: Option<fn(cef_string_list_t)>,
 }
 
 impl From<cef_string_list_t> for CefStringList {
     fn from(raw: cef_string_list_t) -> Self {
-        CefStringList {
-            raw,
-            userfree: None,
-        }
+        CefStringList { raw }
     }
 }
 

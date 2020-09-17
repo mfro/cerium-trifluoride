@@ -3,7 +3,7 @@
 #[allow(non_snake_case)]
 pub fn cef_parse_url(url: &crate::include::internal::CefString, parts: &mut crate::include::internal::CefURLParts, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_parse_url(crate::include::internal::IntoCef::into_cef(url),parts as *mut _ as *mut _,);
+    let ret = cef_sys::cef_parse_url(url as *const _ as *const _,parts as *mut _ as *mut _,);
     if ret == 0 { false } else { true }
   }
 }
@@ -13,7 +13,7 @@ pub fn cef_parse_url(url: &crate::include::internal::CefString, parts: &mut crat
 #[allow(non_snake_case)]
 pub fn cef_create_url(parts: &crate::include::internal::CefURLParts, url: &mut crate::include::internal::CefString, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_create_url(parts as *const _ as *const _,crate::include::internal::IntoCef::into_cef(url),);
+    let ret = cef_sys::cef_create_url(parts as *const _ as *const _,url as *mut _ as *mut _,);
     if ret == 0 { false } else { true }
   }
 }
@@ -26,19 +26,27 @@ pub fn cef_create_url(parts: &crate::include::internal::CefURLParts, url: &mut c
 /// and (b) omit the port if it is the default for the scheme. Do not use this
 /// for URLs which will be parsed or sent to other applications.
 #[allow(non_snake_case)]
-pub fn cef_format_url_for_security_display(origin_url: &crate::include::internal::CefString, ) -> crate::include::internal::CefString {
+pub fn cef_format_url_for_security_display(origin_url: &crate::include::internal::CefString, ) -> crate::include::internal::CefStringUserFree {
   unsafe {
-    let ret = cef_sys::cef_format_url_for_security_display(crate::include::internal::IntoCef::into_cef(origin_url),);
-    crate::include::internal::CefString::userfree(ret)
+    let ret = cef_sys::cef_format_url_for_security_display(origin_url as *const _ as *const _,);
+    crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
   }
 }
 /// Returns the mime type for the specified file extension or an empty string if
 /// unknown.
 #[allow(non_snake_case)]
-pub fn cef_get_mime_type(extension: &crate::include::internal::CefString, ) -> crate::include::internal::CefString {
+pub fn cef_get_mime_type(extension: &crate::include::internal::CefString, ) -> crate::include::internal::CefStringUserFree {
   unsafe {
-    let ret = cef_sys::cef_get_mime_type(crate::include::internal::IntoCef::into_cef(extension),);
-    crate::include::internal::CefString::userfree(ret)
+    let ret = cef_sys::cef_get_mime_type(extension as *const _ as *const _,);
+    crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
+  }
+}
+/// Encodes |data| as a base64 string.
+#[allow(non_snake_case)]
+pub fn cef_base64encode(data: &[u8], ) -> crate::include::internal::CefStringUserFree {
+  unsafe {
+    let ret = cef_sys::cef_base64encode(data.as_ptr() as *const _,data.len() as _,);
+    crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
   }
 }
 /// Decodes the base64 encoded string |data|. The returned value will be NULL if
@@ -46,7 +54,7 @@ pub fn cef_get_mime_type(extension: &crate::include::internal::CefString, ) -> c
 #[allow(non_snake_case)]
 pub fn cef_base64decode(data: &crate::include::internal::CefString, ) -> Option<crate::include::CefBinaryValue> {
   unsafe {
-    let ret = cef_sys::cef_base64decode(crate::include::internal::IntoCef::into_cef(data),);
+    let ret = cef_sys::cef_base64decode(data as *const _ as *const _,);
     crate::include::CefBinaryValue::from_cef_own(ret)
   }
 }
@@ -55,10 +63,10 @@ pub fn cef_base64decode(data: &crate::include::internal::CefString, ) -> Option<
 /// converted to "%XX". If |use_plus| is true spaces will change to "+". The
 /// result is basically the same as encodeURIComponent in Javacript.
 #[allow(non_snake_case)]
-pub fn cef_uriencode(text: &crate::include::internal::CefString, use_plus: bool, ) -> crate::include::internal::CefString {
+pub fn cef_uriencode(text: &crate::include::internal::CefString, use_plus: bool, ) -> crate::include::internal::CefStringUserFree {
   unsafe {
-    let ret = cef_sys::cef_uriencode(crate::include::internal::IntoCef::into_cef(text),if use_plus { 1 } else { 0 },);
-    crate::include::internal::CefString::userfree(ret)
+    let ret = cef_sys::cef_uriencode(text as *const _ as *const _,if use_plus { 1 } else { 0 },);
+    crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
   }
 }
 /// Unescapes |text| and returns the result. Unescaping consists of looking for
@@ -70,10 +78,10 @@ pub fn cef_uriencode(text: &crate::include::internal::CefString, use_plus: bool,
 /// initial decoded result will be returned.  The |unescape_rule| parameter
 /// supports further customization the decoding process.
 #[allow(non_snake_case)]
-pub fn cef_uridecode(text: &crate::include::internal::CefString, convert_to_utf8: bool, unescape_rule: crate::include::internal::CefUriUnescapeRule, ) -> crate::include::internal::CefString {
+pub fn cef_uridecode(text: &crate::include::internal::CefString, convert_to_utf8: bool, unescape_rule: crate::include::internal::CefUriUnescapeRule, ) -> crate::include::internal::CefStringUserFree {
   unsafe {
-    let ret = cef_sys::cef_uridecode(crate::include::internal::IntoCef::into_cef(text),if convert_to_utf8 { 1 } else { 0 },unescape_rule.into(),);
-    crate::include::internal::CefString::userfree(ret)
+    let ret = cef_sys::cef_uridecode(text as *const _ as *const _,if convert_to_utf8 { 1 } else { 0 },unescape_rule.into(),);
+    crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
   }
 }
 /// Parses the specified |json_string| and returns a dictionary or list
@@ -81,7 +89,17 @@ pub fn cef_uridecode(text: &crate::include::internal::CefString, convert_to_utf8
 #[allow(non_snake_case)]
 pub fn cef_parse_json(json_string: &crate::include::internal::CefString, options: crate::include::internal::CefJsonParserOptions, ) -> Option<crate::include::CefValue> {
   unsafe {
-    let ret = cef_sys::cef_parse_json(crate::include::internal::IntoCef::into_cef(json_string),options.into(),);
+    let ret = cef_sys::cef_parse_json(json_string as *const _ as *const _,options.into(),);
+    crate::include::CefValue::from_cef_own(ret)
+  }
+}
+/// Parses the specified UTF8-encoded |json| buffer of size |json_size| and
+/// returns a dictionary or list representation. If JSON parsing fails this
+/// method returns NULL.
+#[allow(non_snake_case)]
+pub fn cef_parse_json_buffer(json: &[u8], options: crate::include::internal::CefJsonParserOptions, ) -> Option<crate::include::CefValue> {
+  unsafe {
+    let ret = cef_sys::cef_parse_json_buffer(json.as_ptr() as *const _,json.len() as _,options.into(),);
     crate::include::CefValue::from_cef_own(ret)
   }
 }
@@ -92,7 +110,7 @@ pub fn cef_parse_json(json_string: &crate::include::internal::CefString, options
 #[allow(non_snake_case)]
 pub fn cef_parse_jsonand_return_error(json_string: &crate::include::internal::CefString, options: crate::include::internal::CefJsonParserOptions, error_code_out: &mut crate::include::internal::CefJsonParserError, error_msg_out: &mut crate::include::internal::CefString, ) -> Option<crate::include::CefValue> {
   unsafe {
-    let ret = cef_sys::cef_parse_jsonand_return_error(crate::include::internal::IntoCef::into_cef(json_string),options.into(),error_code_out as *mut _ as *mut _,crate::include::internal::IntoCef::into_cef(error_msg_out),);
+    let ret = cef_sys::cef_parse_jsonand_return_error(json_string as *const _ as *const _,options.into(),error_code_out as *mut _ as *mut _,error_msg_out as *mut _ as *mut _,);
     crate::include::CefValue::from_cef_own(ret)
   }
 }
@@ -100,9 +118,9 @@ pub fn cef_parse_jsonand_return_error(json_string: &crate::include::internal::Ce
 /// dictionary or list value. Returns an empty string on failure. This method
 /// requires exclusive access to |node| including any underlying data.
 #[allow(non_snake_case)]
-pub fn cef_write_json(node: crate::include::CefValue, options: crate::include::internal::CefJsonWriterOptions, ) -> crate::include::internal::CefString {
+pub fn cef_write_json(node: crate::include::CefValue, options: crate::include::internal::CefJsonWriterOptions, ) -> crate::include::internal::CefStringUserFree {
   unsafe {
     let ret = cef_sys::cef_write_json(crate::include::CefValue::to_cef_own(node),options.into(),);
-    crate::include::internal::CefString::userfree(ret)
+    crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
   }
 }

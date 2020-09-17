@@ -1,4 +1,4 @@
-pub type CefMenuModel = crate::include::base::CefProxy<cef_sys::cef_menu_model_t>;
+pub type CefMenuModel = crate::include::refcounting::CefProxy<cef_sys::cef_menu_model_t>;
 #[allow(non_snake_case)]
 impl CefMenuModel {
   /// Create a new MenuModel with the specified |delegate|.
@@ -53,7 +53,7 @@ impl CefMenuModel {
   pub fn add_item(&mut self, command_id: i32, label: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().add_item {
-        Some(f) => f(self.raw.as_ptr(),command_id,crate::include::internal::IntoCef::into_cef(label),),
+        Some(f) => f(self.raw.as_ptr(),command_id,label as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -63,7 +63,7 @@ impl CefMenuModel {
   pub fn add_check_item(&mut self, command_id: i32, label: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().add_check_item {
-        Some(f) => f(self.raw.as_ptr(),command_id,crate::include::internal::IntoCef::into_cef(label),),
+        Some(f) => f(self.raw.as_ptr(),command_id,label as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -74,7 +74,7 @@ impl CefMenuModel {
   pub fn add_radio_item(&mut self, command_id: i32, label: &crate::include::internal::CefString, group_id: i32) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().add_radio_item {
-        Some(f) => f(self.raw.as_ptr(),command_id,crate::include::internal::IntoCef::into_cef(label),group_id,),
+        Some(f) => f(self.raw.as_ptr(),command_id,label as *const _ as *const _,group_id,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -84,7 +84,7 @@ impl CefMenuModel {
   pub fn add_sub_menu(&mut self, command_id: i32, label: &crate::include::internal::CefString) -> Option<crate::include::CefMenuModel> {
     unsafe {
       let ret = match self.raw.as_ref().add_sub_menu {
-        Some(f) => f(self.raw.as_ptr(),command_id,crate::include::internal::IntoCef::into_cef(label),),
+        Some(f) => f(self.raw.as_ptr(),command_id,label as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefMenuModel::from_cef_own(ret)
@@ -106,7 +106,7 @@ impl CefMenuModel {
   pub fn insert_item_at(&mut self, index: i32, command_id: i32, label: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().insert_item_at {
-        Some(f) => f(self.raw.as_ptr(),index,command_id,crate::include::internal::IntoCef::into_cef(label),),
+        Some(f) => f(self.raw.as_ptr(),index,command_id,label as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -117,7 +117,7 @@ impl CefMenuModel {
   pub fn insert_check_item_at(&mut self, index: i32, command_id: i32, label: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().insert_check_item_at {
-        Some(f) => f(self.raw.as_ptr(),index,command_id,crate::include::internal::IntoCef::into_cef(label),),
+        Some(f) => f(self.raw.as_ptr(),index,command_id,label as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -129,7 +129,7 @@ impl CefMenuModel {
   pub fn insert_radio_item_at(&mut self, index: i32, command_id: i32, label: &crate::include::internal::CefString, group_id: i32) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().insert_radio_item_at {
-        Some(f) => f(self.raw.as_ptr(),index,command_id,crate::include::internal::IntoCef::into_cef(label),group_id,),
+        Some(f) => f(self.raw.as_ptr(),index,command_id,label as *const _ as *const _,group_id,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -140,7 +140,7 @@ impl CefMenuModel {
   pub fn insert_sub_menu_at(&mut self, index: i32, command_id: i32, label: &crate::include::internal::CefString) -> Option<crate::include::CefMenuModel> {
     unsafe {
       let ret = match self.raw.as_ref().insert_sub_menu_at {
-        Some(f) => f(self.raw.as_ptr(),index,command_id,crate::include::internal::IntoCef::into_cef(label),),
+        Some(f) => f(self.raw.as_ptr(),index,command_id,label as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefMenuModel::from_cef_own(ret)
@@ -199,31 +199,31 @@ impl CefMenuModel {
     }
   }
   /// Returns the label for the specified |command_id| or empty if not found.
-  pub fn get_label(&mut self, command_id: i32) -> crate::include::internal::CefString {
+  pub fn get_label(&mut self, command_id: i32) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_label {
         Some(f) => f(self.raw.as_ptr(),command_id,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the label at the specified |index| or empty if not found due to
   /// invalid range or the index being a separator.
-  pub fn get_label_at(&mut self, index: i32) -> crate::include::internal::CefString {
+  pub fn get_label_at(&mut self, index: i32) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_label_at {
         Some(f) => f(self.raw.as_ptr(),index,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Sets the label for the specified |command_id|. Returns true on success.
   pub fn set_label(&mut self, command_id: i32, label: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_label {
-        Some(f) => f(self.raw.as_ptr(),command_id,crate::include::internal::IntoCef::into_cef(label),),
+        Some(f) => f(self.raw.as_ptr(),command_id,label as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -233,7 +233,7 @@ impl CefMenuModel {
   pub fn set_label_at(&mut self, index: i32, label: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_label_at {
-        Some(f) => f(self.raw.as_ptr(),index,crate::include::internal::IntoCef::into_cef(label),),
+        Some(f) => f(self.raw.as_ptr(),index,label as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -611,7 +611,7 @@ impl CefMenuModel {
   pub fn set_font_list(&mut self, command_id: i32, font_list: Option<&crate::include::internal::CefString>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_font_list {
-        Some(f) => f(self.raw.as_ptr(),command_id,crate::include::internal::IntoCef::into_cef(font_list),),
+        Some(f) => f(self.raw.as_ptr(),command_id,match font_list { Some(font_list) => font_list as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -632,7 +632,7 @@ impl CefMenuModel {
   pub fn set_font_list_at(&mut self, index: i32, font_list: Option<&crate::include::internal::CefString>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_font_list_at {
-        Some(f) => f(self.raw.as_ptr(),index,crate::include::internal::IntoCef::into_cef(font_list),),
+        Some(f) => f(self.raw.as_ptr(),index,match font_list { Some(font_list) => font_list as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       if ret == 0 { false } else { true }

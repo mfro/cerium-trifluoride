@@ -1,4 +1,4 @@
-pub type CefDragData = crate::include::base::CefProxy<cef_sys::cef_drag_data_t>;
+pub type CefDragData = crate::include::refcounting::CefProxy<cef_sys::cef_drag_data_t>;
 #[allow(non_snake_case)]
 impl CefDragData {
   /// Create a new CefDragData object.
@@ -60,74 +60,74 @@ impl CefDragData {
     }
   }
   /// Return the link URL that is being dragged.
-  pub fn get_link_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_link_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_link_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Return the title associated with the link being dragged.
-  pub fn get_link_title(&mut self) -> crate::include::internal::CefString {
+  pub fn get_link_title(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_link_title {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Return the metadata, if any, associated with the link being dragged.
-  pub fn get_link_metadata(&mut self) -> crate::include::internal::CefString {
+  pub fn get_link_metadata(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_link_metadata {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Return the plain text fragment that is being dragged.
-  pub fn get_fragment_text(&mut self) -> crate::include::internal::CefString {
+  pub fn get_fragment_text(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_fragment_text {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Return the text/html fragment that is being dragged.
-  pub fn get_fragment_html(&mut self) -> crate::include::internal::CefString {
+  pub fn get_fragment_html(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_fragment_html {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Return the base URL that the fragment came from. This value is used for
   /// resolving relative URLs and may be empty.
-  pub fn get_fragment_base_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_fragment_base_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_fragment_base_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Return the name of the file being dragged out of the browser window.
-  pub fn get_file_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_file_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_file_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Write the contents of the file being dragged out of the web view into
@@ -147,7 +147,7 @@ impl CefDragData {
   pub fn set_link_url(&mut self, url: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_link_url {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(url),),
+        Some(f) => f(self.raw.as_ptr(),match url { Some(url) => url as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret
@@ -157,7 +157,7 @@ impl CefDragData {
   pub fn set_link_title(&mut self, title: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_link_title {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(title),),
+        Some(f) => f(self.raw.as_ptr(),match title { Some(title) => title as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret
@@ -167,7 +167,7 @@ impl CefDragData {
   pub fn set_link_metadata(&mut self, data: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_link_metadata {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(data),),
+        Some(f) => f(self.raw.as_ptr(),match data { Some(data) => data as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret
@@ -177,7 +177,7 @@ impl CefDragData {
   pub fn set_fragment_text(&mut self, text: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_fragment_text {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(text),),
+        Some(f) => f(self.raw.as_ptr(),match text { Some(text) => text as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret
@@ -187,7 +187,7 @@ impl CefDragData {
   pub fn set_fragment_html(&mut self, html: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_fragment_html {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(html),),
+        Some(f) => f(self.raw.as_ptr(),match html { Some(html) => html as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret
@@ -197,7 +197,7 @@ impl CefDragData {
   pub fn set_fragment_base_url(&mut self, base_url: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_fragment_base_url {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(base_url),),
+        Some(f) => f(self.raw.as_ptr(),match base_url { Some(base_url) => base_url as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret
@@ -219,7 +219,7 @@ impl CefDragData {
   pub fn add_file(&mut self, path: &crate::include::internal::CefString, display_name: Option<&crate::include::internal::CefString>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().add_file {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(path),crate::include::internal::IntoCef::into_cef(display_name),),
+        Some(f) => f(self.raw.as_ptr(),path as *const _ as *const _,match display_name { Some(display_name) => display_name as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       ret

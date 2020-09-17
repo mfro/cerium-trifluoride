@@ -1,4 +1,4 @@
-pub type CefThread = crate::include::base::CefProxy<cef_sys::cef_thread_t>;
+pub type CefThread = crate::include::refcounting::CefProxy<cef_sys::cef_thread_t>;
 #[allow(non_snake_case)]
 impl CefThread {
   /// Create and start a new thread. This method does not block waiting for the
@@ -14,7 +14,7 @@ impl CefThread {
   #[allow(non_snake_case)]
   pub fn create_thread(display_name: Option<&crate::include::internal::CefString>, priority: crate::include::internal::CefThreadPriority, message_loop_type: crate::include::internal::CefMessageLoopType, stoppable: bool, com_init_mode: crate::include::internal::CefComInitMode, ) -> Option<crate::include::CefThread> {
     unsafe {
-      let ret = cef_sys::cef_thread_create(crate::include::internal::IntoCef::into_cef(display_name),priority.into(),message_loop_type.into(),if stoppable { 1 } else { 0 },com_init_mode.into(),);
+      let ret = cef_sys::cef_thread_create(match display_name { Some(display_name) => display_name as *const _ as *const _, None => std::ptr::null_mut() },priority.into(),message_loop_type.into(),if stoppable { 1 } else { 0 },com_init_mode.into(),);
       crate::include::CefThread::from_cef_own(ret)
     }
   }

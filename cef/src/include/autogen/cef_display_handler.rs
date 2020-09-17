@@ -40,12 +40,12 @@ pub trait DisplayHandler {
 define_refcounted!(DisplayHandler, CefDisplayHandler, cef_display_handler_t, on_address_change: cef_display_handler_t_on_address_change,on_title_change: cef_display_handler_t_on_title_change,on_favicon_urlchange: cef_display_handler_t_on_favicon_urlchange,on_fullscreen_mode_change: cef_display_handler_t_on_fullscreen_mode_change,on_tooltip: cef_display_handler_t_on_tooltip,on_status_message: cef_display_handler_t_on_status_message,on_console_message: cef_display_handler_t_on_console_message,on_auto_resize: cef_display_handler_t_on_auto_resize,on_loading_progress_change: cef_display_handler_t_on_loading_progress_change,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_display_handler_t_on_address_change(_self: *mut cef_sys::cef_display_handler_t, browser: *mut cef_sys::cef_browser_t, frame: *mut cef_sys::cef_frame_t, url: *const cef_sys::cef_string_t) -> () {
-  let ret = CefDisplayHandler::from_cef(_self, true).get().on_address_change(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),&crate::include::internal::CefString::from_cef(url).unwrap(),);
+  let ret = CefDisplayHandler::from_cef(_self, true).get().on_address_change(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),&*(url as *const _),);
   ret
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_display_handler_t_on_title_change(_self: *mut cef_sys::cef_display_handler_t, browser: *mut cef_sys::cef_browser_t, title: *const cef_sys::cef_string_t) -> () {
-  let ret = CefDisplayHandler::from_cef(_self, true).get().on_title_change(crate::include::CefBrowser::from_cef_own(browser).unwrap(),match &crate::include::internal::CefString::from_cef(title) { Some(ref x) => Some(x), None => None },);
+  let ret = CefDisplayHandler::from_cef(_self, true).get().on_title_change(crate::include::CefBrowser::from_cef_own(browser).unwrap(),if title.is_null() { None } else { Some(&*(title as *const _)) },);
   ret
 }
 #[allow(non_snake_case)]
@@ -60,17 +60,17 @@ unsafe extern "C" fn cef_display_handler_t_on_fullscreen_mode_change(_self: *mut
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_display_handler_t_on_tooltip(_self: *mut cef_sys::cef_display_handler_t, browser: *mut cef_sys::cef_browser_t, text: *mut cef_sys::cef_string_t) -> i32 {
-  let ret = CefDisplayHandler::from_cef(_self, true).get().on_tooltip(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&mut crate::include::internal::CefString::from_cef(text).unwrap(),);
+  let ret = CefDisplayHandler::from_cef(_self, true).get().on_tooltip(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&mut *(text as *mut _),);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_display_handler_t_on_status_message(_self: *mut cef_sys::cef_display_handler_t, browser: *mut cef_sys::cef_browser_t, value: *const cef_sys::cef_string_t) -> () {
-  let ret = CefDisplayHandler::from_cef(_self, true).get().on_status_message(crate::include::CefBrowser::from_cef_own(browser).unwrap(),match &crate::include::internal::CefString::from_cef(value) { Some(ref x) => Some(x), None => None },);
+  let ret = CefDisplayHandler::from_cef(_self, true).get().on_status_message(crate::include::CefBrowser::from_cef_own(browser).unwrap(),if value.is_null() { None } else { Some(&*(value as *const _)) },);
   ret
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_display_handler_t_on_console_message(_self: *mut cef_sys::cef_display_handler_t, browser: *mut cef_sys::cef_browser_t, level: cef_sys::cef_log_severity_t, message: *const cef_sys::cef_string_t, source: *const cef_sys::cef_string_t, line: i32) -> i32 {
-  let ret = CefDisplayHandler::from_cef(_self, true).get().on_console_message(crate::include::CefBrowser::from_cef_own(browser).unwrap(),level.into(),match &crate::include::internal::CefString::from_cef(message) { Some(ref x) => Some(x), None => None },match &crate::include::internal::CefString::from_cef(source) { Some(ref x) => Some(x), None => None },line,);
+  let ret = CefDisplayHandler::from_cef(_self, true).get().on_console_message(crate::include::CefBrowser::from_cef_own(browser).unwrap(),level.into(),if message.is_null() { None } else { Some(&*(message as *const _)) },if source.is_null() { None } else { Some(&*(source as *const _)) },line,);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]

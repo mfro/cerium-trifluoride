@@ -1,4 +1,4 @@
-pub type CefFrame = crate::include::base::CefProxy<cef_sys::cef_frame_t>;
+pub type CefFrame = crate::include::refcounting::CefProxy<cef_sys::cef_frame_t>;
 #[allow(non_snake_case)]
 impl CefFrame {
   /// True if this object is currently attached to a valid frame.
@@ -133,7 +133,7 @@ impl CefFrame {
   pub fn load_url(&mut self, url: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().load_url {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(url),),
+        Some(f) => f(self.raw.as_ptr(),url as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -147,7 +147,7 @@ impl CefFrame {
   pub fn execute_java_script(&mut self, code: &crate::include::internal::CefString, script_url: Option<&crate::include::internal::CefString>, start_line: i32) -> () {
     unsafe {
       let ret = match self.raw.as_ref().execute_java_script {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(code),crate::include::internal::IntoCef::into_cef(script_url),start_line,),
+        Some(f) => f(self.raw.as_ptr(),code as *const _ as *const _,match script_url { Some(script_url) => script_url as *const _ as *const _, None => std::ptr::null_mut() },start_line,),
         None => panic!(),
       };
       ret
@@ -178,13 +178,13 @@ impl CefFrame {
   /// returned. Otherwise a unique name will be constructed based on the frame
   /// parent hierarchy. The main (top-level) frame will always have an empty name
   /// value.
-  pub fn get_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the globally unique identifier for this frame or < 0 if the
@@ -210,13 +210,13 @@ impl CefFrame {
     }
   }
   /// Returns the URL currently loaded in this frame.
-  pub fn get_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the browser that this frame belongs to.

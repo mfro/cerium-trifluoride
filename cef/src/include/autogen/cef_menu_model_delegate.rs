@@ -56,6 +56,6 @@ unsafe extern "C" fn cef_menu_model_delegate_t_menu_closed(_self: *mut cef_sys::
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_menu_model_delegate_t_format_label(_self: *mut cef_sys::cef_menu_model_delegate_t, menu_model: *mut cef_sys::cef_menu_model_t, label: *mut cef_sys::cef_string_t) -> i32 {
-  let ret = CefMenuModelDelegate::from_cef(_self, true).get().format_label(crate::include::CefMenuModel::from_cef_own(menu_model).unwrap(),&mut crate::include::internal::CefString::from_cef(label).unwrap(),);
+  let ret = CefMenuModelDelegate::from_cef(_self, true).get().format_label(crate::include::CefMenuModel::from_cef_own(menu_model).unwrap(),&mut *(label as *mut _),);
   if ret { 1 } else { 0 }
 }

@@ -1,4 +1,4 @@
-pub type CefSSLInfo = crate::include::base::CefProxy<cef_sys::cef_sslinfo_t>;
+pub type CefSSLInfo = crate::include::refcounting::CefProxy<cef_sys::cef_sslinfo_t>;
 #[allow(non_snake_case)]
 impl CefSSLInfo {
   /// Returns a bitmask containing any and all problems verifying the server

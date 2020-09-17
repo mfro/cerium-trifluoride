@@ -1,4 +1,4 @@
-pub type CefNavigationEntry = crate::include::base::CefProxy<cef_sys::cef_navigation_entry_t>;
+pub type CefNavigationEntry = crate::include::refcounting::CefProxy<cef_sys::cef_navigation_entry_t>;
 #[allow(non_snake_case)]
 impl CefNavigationEntry {
   /// Returns true if this object is valid. Do not call any other methods if this
@@ -14,43 +14,43 @@ impl CefNavigationEntry {
   }
   /// Returns the actual URL of the page. For some pages this may be data: URL or
   /// similar. Use GetDisplayURL() to return a display-friendly version.
-  pub fn get_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns a display-friendly version of the URL.
-  pub fn get_display_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_display_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_display_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the original URL that was entered by the user before any redirects.
-  pub fn get_original_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_original_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_original_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the title set by the page. This value may be empty.
-  pub fn get_title(&mut self) -> crate::include::internal::CefString {
+  pub fn get_title(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_title {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the transition type which indicates what the user did to move to

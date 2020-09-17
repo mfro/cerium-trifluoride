@@ -11,7 +11,7 @@ pub trait EndTracingCallback {
 define_refcounted!(EndTracingCallback, CefEndTracingCallback, cef_end_tracing_callback_t, on_end_tracing_complete: cef_end_tracing_callback_t_on_end_tracing_complete,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_end_tracing_callback_t_on_end_tracing_complete(_self: *mut cef_sys::cef_end_tracing_callback_t, tracing_file: *const cef_sys::cef_string_t) -> () {
-  let ret = CefEndTracingCallback::from_cef(_self, true).get().on_end_tracing_complete(&crate::include::internal::CefString::from_cef(tracing_file).unwrap(),);
+  let ret = CefEndTracingCallback::from_cef(_self, true).get().on_end_tracing_complete(&*(tracing_file as *const _),);
   ret
 }
 /// Start tracing events on all processes. Tracing is initialized asynchronously
@@ -33,7 +33,7 @@ unsafe extern "C" fn cef_end_tracing_callback_t_on_end_tracing_complete(_self: *
 #[allow(non_snake_case)]
 pub fn cef_begin_tracing(categories: Option<&crate::include::internal::CefString>, callback: Option<crate::include::CefCompletionCallback>, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_begin_tracing(crate::include::internal::IntoCef::into_cef(categories),callback.map_or(std::ptr::null_mut(), |o| crate::include::CefCompletionCallback::to_cef_own(o)),);
+    let ret = cef_sys::cef_begin_tracing(match categories { Some(categories) => categories as *const _ as *const _, None => std::ptr::null_mut() },callback.map_or(std::ptr::null_mut(), |o| crate::include::CefCompletionCallback::to_cef_own(o)),);
     if ret == 0 { false } else { true }
   }
 }
@@ -51,7 +51,7 @@ pub fn cef_begin_tracing(categories: Option<&crate::include::internal::CefString
 #[allow(non_snake_case)]
 pub fn cef_end_tracing(tracing_file: Option<&crate::include::internal::CefString>, callback: Option<crate::include::CefEndTracingCallback>, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_end_tracing(crate::include::internal::IntoCef::into_cef(tracing_file),callback.map_or(std::ptr::null_mut(), |o| crate::include::CefEndTracingCallback::to_cef_own(o)),);
+    let ret = cef_sys::cef_end_tracing(match tracing_file { Some(tracing_file) => tracing_file as *const _ as *const _, None => std::ptr::null_mut() },callback.map_or(std::ptr::null_mut(), |o| crate::include::CefEndTracingCallback::to_cef_own(o)),);
     if ret == 0 { false } else { true }
   }
 }

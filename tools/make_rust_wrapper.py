@@ -35,7 +35,8 @@ interfaces = set()
 cef_binding_ns = 'cef_sys'
 cef_struct_ns = 'crate::include::internal'
 cef_object_ns = 'crate::include'
-cef_wrapper_ns = 'crate::include::base'
+cef_helpers_ns = 'crate::include::helpers'
+cef_refcounting_ns = 'crate::include::refcounting'
 
 class writer:
   def __init__(self):
@@ -55,10 +56,21 @@ class writer:
       self.do_indent = False
     self.result += content
 
-  def write_line(self, content = ''):
-    self.write(content)
-    self.write('\n')
-    self.do_indent = True
+  def write_line(self, a = '', b = None):
+    if b is None:
+      self.write(a)
+      self.write('\n')
+      self.do_indent = True
+    elif a < 0:
+      self.indent(a)
+      self.write(b)
+      self.write('\n')
+      self.do_indent = True
+    else:
+      self.write(b)
+      self.write('\n')
+      self.indent(a)
+      self.do_indent = True
 
 class type_translation_context:
   def __init__(self, extern_definition, rust_definition, convert, restore):
@@ -148,6 +160,23 @@ class type_refptr_option(type_base):
   def rust_to_extern(self, name):
     return f'{name}.map_or(std::ptr::null_mut(), |o| {self.inner.rust_type}::to_cef_own(o))'
 
+class type_ref_refptr(type_base):
+  def __init__(self, raw):
+    super().__init__()
+
+    self.inner = type_refptr(raw)
+
+    assert raw[0] == 'class'
+
+    self.rust_type = f'&{self.inner.rust_type}'
+    self.extern_type = f'{self.inner.extern_type}'
+
+  def extern_parameter_to_rust_parameter(self, name):
+    return f'&*({name} as *const _)'
+
+  def rust_parameter_to_extern_parameter(self, name):
+    return f'{name} as *const _ as *const _'
+
 class type_mut_refptr(type_base):
   def __init__(self, raw):
     super().__init__()
@@ -190,56 +219,15 @@ class type_rawptr(type_base):
   def rust_to_extern(self, name):
     return f'{self.rust_type}::to_cef_own({name})'
 
-class type_string(type_base):
+class type_string_userfree(type_base):
   def __init__(self):
     super().__init__()
 
-    self.rust_type = f'{cef_struct_ns}::CefString'
+    self.rust_type = f'{cef_struct_ns}::CefStringUserFree'
     self.extern_type = f'*mut {cef_binding_ns}::cef_string_t'
 
   def extern_return_to_rust_return(self, name):
-    return f'{cef_struct_ns}::CefString::userfree({name})'
-
-class type_ref_string(type_base):
-  def __init__(self):
-    super().__init__()
-
-    self.rust_type = f'&{cef_struct_ns}::CefString'
-    self.extern_type = f'*const {cef_binding_ns}::cef_string_t'
-
-  def extern_parameter_to_rust_parameter(self, name):
-    return f'&{cef_struct_ns}::CefString::from_cef({name}).unwrap()'
-
-  def rust_parameter_to_extern_parameter(self, name):
-    return f'crate::include::internal::IntoCef::into_cef({name})'
-
-class type_ref_string_option(type_base):
-  def __init__(self):
-    super().__init__()
-
-    self.inner = type_ref_string()
-
-    self.rust_type = f'Option<{self.inner.rust_type}>'
-    self.extern_type = self.inner.extern_type
-
-  def extern_parameter_to_rust_parameter(self, name):
-    return f'match {self.inner.rust_type}::from_cef({name}) {{ Some(ref x) => Some(x), None => None }}'
-
-  def rust_parameter_to_extern_parameter(self, name):
-    return f'crate::include::internal::IntoCef::into_cef({name})'
-
-class type_mut_string(type_base):
-  def __init__(self):
-    super().__init__()
-
-    self.rust_type = f'&mut {cef_struct_ns}::CefString'
-    self.extern_type = f'*mut {cef_binding_ns}::cef_string_t'
-
-  def extern_parameter_to_rust_parameter(self, name):
-    return f'&mut {cef_struct_ns}::CefString::from_cef({name}).unwrap()'
-
-  def rust_parameter_to_extern_parameter(self, name):
-    return f'crate::include::internal::IntoCef::into_cef({name})'
+    return f'{cef_struct_ns}::CefStringUserFree::from_cef({name}).unwrap()'
 
 class type_struct(type_base):
   def __init__(self, raw_name):
@@ -266,10 +254,10 @@ class type_ref_struct(type_base):
     self.rust_type = f'&{self.inner.rust_type}'
     self.extern_type = f'*const {self.inner.extern_type}'
 
-  def extern_to_rust(self, name):
+  def extern_parameter_to_rust_parameter(self, name):
     return f'&*({name} as *const _)'
 
-  def rust_to_extern(self, name):
+  def rust_parameter_to_extern_parameter(self, name):
     return f'{name} as *const _ as *const _'
 
 class type_ref_struct_option(type_base):
@@ -281,11 +269,11 @@ class type_ref_struct_option(type_base):
     self.rust_type = f'Option<{self.inner.rust_type}>'
     self.extern_type = f'{self.inner.extern_type}'
 
-  def extern_to_rust(self, name):
-    return f'if {name}.is_null() {{ None }} else {{ Some({self.inner.extern_to_rust(name)}) }}'
+  def extern_parameter_to_rust_parameter(self, name):
+    return f'if {name}.is_null() {{ None }} else {{ Some({self.inner.extern_parameter_to_rust_parameter(name)}) }}'
 
-  def rust_to_extern(self, name):
-    return f'match {name} {{ Some({name}) => {self.inner.rust_to_extern(name)}, None => std::ptr::null_mut() }}'
+  def rust_parameter_to_extern_parameter(self, name):
+    return f'match {name} {{ Some({name}) => {self.inner.rust_parameter_to_extern_parameter(name)}, None => std::ptr::null_mut() }}'
 
 class type_mut_struct(type_base):
   def __init__(self, raw_name):
@@ -298,7 +286,6 @@ class type_mut_struct(type_base):
 
   def extern_to_rust(self, name):
     return f'&mut *({name} as *mut _)'
-    # sorry
 
   def rust_to_extern(self, name):
     return f'{name} as *mut _ as *mut _'
@@ -306,8 +293,6 @@ class type_mut_struct(type_base):
 class type_ref_list_string(type_base):
   def __init__(self):
     super().__init__()
-
-    self.inner = type_string()
 
     self.rust_type = f'&{cef_struct_ns}::CefStringList'
     self.extern_type = f'{cef_binding_ns}::cef_string_list_t'
@@ -319,21 +304,59 @@ class type_ref_list_string(type_base):
     return f'{name}.into()'
 
 class type_ref_list(type_base):
-  def __init__(self, inner):
+  def __init__(self, inner, size, size_first):
     super().__init__()
 
-    raise RuntimeError('lists are not supported')
+    if not isinstance(inner, type_primitive) and not isinstance(inner, type_struct):
+      raise RuntimeError(f'lists are not supported: {inner.rust_type} {inner.extern_type}')
 
     self.inner = inner
+    self.size = size
+    self.size_first = size_first
 
-    self.rust_type = f'&[{self.inner.rust_type}]'
-    self.extern_type = [f'u64', f'*const {self.inner.extern_type}']
+    if self.inner.rust_type == 'std::os::raw::c_void':
+      self.rust_type = '&[u8]'
+    else:
+      self.rust_type = f'&[{self.inner.rust_type}]'
+
+    self.extern_type = [f'*const {self.inner.extern_type}', f'{self.size.rust_type}']
+    if size_first: self.extern_type.reverse()
 
   def extern_to_rust(self, name):
-    return f'({name[0]}, {name[1]}).into()'
+    return f'std::slice::from_raw_parts({name[0]} as *const _, {name[1]} as _)'
 
   def rust_to_extern(self, name):
-    return [f'{name}.len() as u64', f'{name}.as_ptr()']
+    v = [f'{name}.as_ptr() as *const _', f'{name}.len() as _']
+    if self.size_first: v.reverse()
+    return v
+
+class type_mut_list(type_base):
+  def __init__(self, inner, size, size_first):
+    super().__init__()
+
+    if not isinstance(inner, type_primitive) and not isinstance(inner, type_struct):
+      raise RuntimeError(f'lists are not supported: {inner.rust_type} {inner.extern_type}')
+
+    self.inner = inner
+    self.size = size
+    self.size_first = size_first
+
+    if self.inner.rust_type == 'std::os::raw::c_void':
+      self.rust_type = '&mut [u8]'
+    else:
+      self.rust_type = f'&mut [{self.inner.rust_type}]'
+
+    self.extern_type = [f'*mut {self.inner.extern_type}', f'{self.size.rust_type}']
+
+    if size_first: self.extern_type.reverse()
+
+  def extern_to_rust(self, name):
+    return f'std::slice::from_raw_parts_mut({name[0]} as *mut _, {name[1]} as _)'
+
+  def rust_to_extern(self, name):
+    v = [f'{name}.as_mut_ptr() as *mut _', f'{name}.len() as _']
+    if self.size_first: v.reverse()
+    return v
 
 class type_unit(type_base):
   def __init__(self):
@@ -439,8 +462,6 @@ def generate_comment(writer, lines):
     writer.write_line(f'/// {line}')
 
 def generate_types(writer, contents):
-  structures_copy = structures.copy()
-
   fields = set()
 
   for match in regex.finditer(r'(\/\/(.*)\n)*(typedef enum {([^}]*)} (\w+);|typedef struct \w+ {([^}]*)} (\w+);)', contents):
@@ -450,7 +471,6 @@ def generate_types(writer, contents):
       rust_name = map_identifier(get_rust_type_name(extern_name))
       label = regex.match(r'cef_(.*)_t', extern_name).group(1)
 
-      if extern_name in structures_copy: structures_copy.remove(extern_name)
       structures.add(extern_name)
 
       variants = []
@@ -476,35 +496,32 @@ def generate_types(writer, contents):
       writer.write_line(f'#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]')
       writer.write_line(f'pub struct {rust_name}({cef_binding_ns}::{extern_name});')
 
-      writer.write_line(f'impl {rust_name} {{')
-      writer.indent(+1)
+      writer.write_line(+1, f'impl {rust_name} {{')
 
       for (rust_variant, c_variant, comment) in variants:
         generate_comment(writer, comment)
         writer.write_line(f'pub const {rust_variant}: {rust_name} = {rust_name}({cef_binding_ns}::{extern_name}_{c_variant});')
 
-      writer.indent(-1)
-      writer.write_line(f'}}')
+      writer.write_line(-1, f'}}')
 
-      writer.write_line(f'impl From<{cef_binding_ns}::{extern_name}> for {rust_name} {{')
-      writer.indent(+1)
-      writer.write_line(f'fn from(raw: {cef_binding_ns}::{extern_name}) -> {rust_name} {{')
-      writer.indent(+1)
+      writer.write_line(+1, f'impl From<{cef_binding_ns}::{extern_name}> for {rust_name} {{')
+      writer.write_line(+1, f'fn from(raw: {cef_binding_ns}::{extern_name}) -> {rust_name} {{')
       writer.write_line(f'{rust_name}(raw)')
-      writer.indent(-1)
-      writer.write_line(f'}}')
-      writer.indent(-1)
-      writer.write_line(f'}}')
+      writer.write_line(-1, f'}}')
+      writer.write_line(-1, f'}}')
 
-      writer.write_line(f'impl From<{rust_name}> for {cef_binding_ns}::{extern_name} {{')
-      writer.indent(+1)
-      writer.write_line(f'fn from(src: {rust_name}) -> {cef_binding_ns}::{extern_name} {{')
-      writer.indent(+1)
+      writer.write_line(+1, f'impl From<{rust_name}> for {cef_binding_ns}::{extern_name} {{')
+      writer.write_line(+1, f'fn from(src: {rust_name}) -> {cef_binding_ns}::{extern_name} {{')
       writer.write_line(f'src.0')
-      writer.indent(-1)
-      writer.write_line(f'}}')
-      writer.indent(-1)
-      writer.write_line(f'}}')
+      writer.write_line(-1, f'}}')
+      writer.write_line(-1, f'}}')
+
+      writer.write_line(+1, f'impl std::ops::BitOr for {rust_name} {{')
+      writer.write_line(f'type Output = Self;')
+      writer.write_line(+1, f'fn bitor(self, rhs: Self) -> Self::Output {{')
+      writer.write_line(f'Self(self.0 | rhs.0)')
+      writer.write_line(-1, f'}}')
+      writer.write_line(-1, f'}}')
 
     elif match.group(7):
       body = match.group(6)
@@ -512,7 +529,6 @@ def generate_types(writer, contents):
       rust_name = map_identifier(get_rust_type_name(extern_name))
       label = regex.match(r'cef_(.*)_t', extern_name).group(1)
 
-      if extern_name in structures_copy: structures_copy.remove(extern_name)
       structures.add(extern_name)
 
       # writer.write(f'simple_struct!({rust_name}, {label}, ')
@@ -522,50 +538,37 @@ def generate_types(writer, contents):
       writer.write_line(f'#[derive(Copy, Clone)]')
       writer.write_line(f'pub struct {rust_name} {{ pub raw: {cef_binding_ns}::{extern_name} }}')
 
-      writer.write_line(f'impl Default for {rust_name} {{')
-      writer.indent(+1)
-      writer.write_line(f'fn default() -> {rust_name} {{')
-      writer.indent(+1)
+      writer.write_line(+1, f'impl Default for {rust_name} {{')
+      writer.write_line(+1, f'fn default() -> {rust_name} {{')
       writer.write_line(f'let /* mut */ raw = {cef_binding_ns}::{extern_name}::default();')
       writer.write_line(f'// raw.size = std::mem::size_of::<{cef_binding_ns}::{extern_name}>() as u64;')
       writer.write_line(f'{rust_name} {{ raw }}')
-      writer.indent(-1)
-      writer.write_line(f'}}')
-      writer.indent(-1)
-      writer.write_line(f'}}')
+      writer.write_line(-1, f'}}')
+      writer.write_line(-1, f'}}')
 
-      writer.write_line(f'impl From<{rust_name}> for {cef_binding_ns}::{extern_name} {{')
-      writer.indent(+1)
-      writer.write_line(f'fn from(src: {rust_name}) -> {cef_binding_ns}::{extern_name} {{')
-      writer.indent(+1)
+      writer.write_line(+1, f'impl From<{rust_name}> for {cef_binding_ns}::{extern_name} {{')
+      writer.write_line(+1, f'fn from(src: {rust_name}) -> {cef_binding_ns}::{extern_name} {{')
       writer.write_line(f'src.raw')
-      writer.indent(-1)
-      writer.write_line(f'}}')
-      writer.indent(-1)
-      writer.write_line(f'}}')
+      writer.write_line(-1, f'}}')
+      writer.write_line(-1, f'}}')
 
-      writer.write_line(f'impl From<{cef_binding_ns}::{extern_name}> for {rust_name} {{')
-      writer.indent(+1)
-      writer.write_line(f'fn from(raw: {cef_binding_ns}::{extern_name}) -> {rust_name} {{')
-      writer.indent(+1)
+      writer.write_line(+1, f'impl From<{cef_binding_ns}::{extern_name}> for {rust_name} {{')
+      writer.write_line(+1, f'fn from(raw: {cef_binding_ns}::{extern_name}) -> {rust_name} {{')
       writer.write_line(f'{rust_name} {{ raw }}')
-      writer.indent(-1)
-      writer.write_line(f'}}')
-      writer.indent(-1)
-      writer.write_line(f'}}')
+      writer.write_line(-1, f'}}')
+      writer.write_line(-1, f'}}')
 
       writer.write_line(f'#[allow(non_snake_case)]')
-      writer.write_line(f'impl {rust_name} {{')
-      writer.indent(+1)
+      writer.write_line(+1, f'impl {rust_name} {{')
 
       for field in regex.finditer(r'  ( *\/\/(.*)\n)* *(\w+) (.*?);', body):
         field_name = map_identifier(field.group(4))
         field_extern_type = field.group(3)
-        parsed = parse_type([], field_extern_type)
+        parsed = parse_type(field_extern_type)
 
         if parsed[0] == 'string':
-          read = ('String', f'super::super::cef_string_to_string(&self.raw.{field_name})')
-          write = ('&str', f'super::super::str_to_cef_string(&mut self.raw.{field_name}, v)')
+          read = ('String', f'{cef_helpers_ns}::cef_string_to_string(&self.raw.{field_name})')
+          write = ('&str', f'{cef_helpers_ns}::str_to_cef_string(&mut self.raw.{field_name}, v)')
         elif parsed[0] == 'primitive':
           read = (parsed[2], f'self.raw.{field_name}')
           write = (parsed[2], f'self.raw.{field_name} = v')
@@ -581,10 +584,7 @@ def generate_types(writer, contents):
 
       writer.write_line(f'pub fn build(&self) -> Self {{ Self {{ raw: self.raw }} }}')
 
-      writer.indent(-1)
-      writer.write_line(f'}}')
-
-  print(structures_copy)
+      writer.write_line(-1, f'}}')
 
 def generate_static_func(writer, func):
   if func.has_attrib('capi_name'):
@@ -599,16 +599,16 @@ def generate_static_func(writer, func):
   if hasattr(func.parent, 'parent'): typedefs.extend(func.parent.parent.get_typedefs())
 
   arguments = func.get_arguments()
-  arg_types = [parse_type(typedefs, x.get_type()) for x in arguments]
+  arg_types = [parse_type(x.get_type(), typedefs) for x in arguments]
 
   translations = []
 
   while len(arg_types) > 0:
     arg = arguments[-len(arg_types)]
-    translated = translate_arguments(arg_types, is_optional(arg, func))
+    translated = translate_arguments(arg_types, is_optional(arg, func), func)
     translations.append((map_identifier(arg.get_name()), translated))
 
-  rettype = parse_type(typedefs, func.get_retval().get_type())
+  rettype = parse_type(func.get_retval().get_type(), typedefs)
   if rettype[0] == 'primitive' and rettype[1] == 'void':
     retarg = type_unit()
   else:
@@ -621,10 +621,8 @@ def generate_static_func(writer, func):
   for (name, arg) in translations:
     writer.write(f'{name}: {arg.rust_type}, ')
 
-  writer.write_line(f') -> {retarg.rust_type} {{')
-  writer.indent(+1)
-  writer.write_line('unsafe {')
-  writer.indent(+1)
+  writer.write_line(+1, f') -> {retarg.rust_type} {{')
+  writer.write_line(+1, 'unsafe {')
 
   for (name, arg) in translations:
     if not arg.rust_to_extern_prepare(name): continue
@@ -662,19 +660,16 @@ def generate_static_func(writer, func):
   else:
     writer.write_line('ret')
 
-  writer.indent(-1)
-  writer.write_line(f'}}')
-  writer.indent(-1)
-  writer.write_line(f'}}')
+  writer.write_line(-1, f'}}')
+  writer.write_line(-1, f'}}')
 
 def generate_class(writer, cls):
   c_name = get_c_type_name(cls.get_name())
   trait_name = cls.get_name().replace('Cef', '')
 
-  writer.write_line(f'pub type {cls.get_name()} = {cef_wrapper_ns}::CefProxy<{cef_binding_ns}::{c_name}>;')
+  writer.write_line(f'pub type {cls.get_name()} = {cef_refcounting_ns}::CefProxy<{cef_binding_ns}::{c_name}>;')
   writer.write_line(f'#[allow(non_snake_case)]')
-  writer.write_line(f'impl {cls.get_name()} {{')
-  writer.indent(+1)
+  writer.write_line(+1, f'impl {cls.get_name()} {{')
 
   for func in cls.get_static_funcs():
     try:
@@ -688,8 +683,7 @@ def generate_class(writer, cls):
     except RuntimeError as e:
       print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
 
-  writer.indent(-1)
-  writer.write_line(f'}}')
+  writer.write_line(-1, f'}}')
 
   return ''
 
@@ -701,16 +695,16 @@ def generate_class_func(writer, func):
 
   typedefs = [*func.parent.get_typedefs(), *func.parent.parent.get_typedefs()]
   arguments = func.get_arguments()
-  arg_types = [parse_type(typedefs, x.get_type()) for x in arguments]
+  arg_types = [parse_type(x.get_type(), typedefs) for x in arguments]
 
   translations = []
 
   while len(arg_types) > 0:
     arg = arguments[-len(arg_types)]
-    translated = translate_arguments(arg_types, is_optional(arg, func))
+    translated = translate_arguments(arg_types, is_optional(arg, func), func)
     translations.append((map_identifier(arg.get_name()), translated))
 
-  rettype = parse_type(typedefs, func.get_retval().get_type())
+  rettype = parse_type(func.get_retval().get_type(), typedefs)
   if rettype[0] == 'primitive' and rettype[1] == 'void':
     retarg = type_unit()
   else:
@@ -722,10 +716,8 @@ def generate_class_func(writer, func):
   for (name, arg) in translations:
     writer.write(f', {name}: {arg.rust_type}')
 
-  writer.write_line(f') -> {retarg.rust_type} {{')
-  writer.indent(+1)
-  writer.write_line('unsafe {')
-  writer.indent(+1)
+  writer.write_line(+1, f') -> {retarg.rust_type} {{')
+  writer.write_line(+1, 'unsafe {')
 
   for (name, arg) in translations:
     if not arg.rust_to_extern_prepare(name): continue
@@ -737,8 +729,7 @@ def generate_class_func(writer, func):
         writer.write_line(f'{mapping}')
         label += 1
 
-  writer.write_line(f'let ret = match self.raw.as_ref().{func_name} {{')
-  writer.indent(+1)
+  writer.write_line(+1, f'let ret = match self.raw.as_ref().{func_name} {{')
   writer.write(f'Some(f) => f(self.raw.as_ptr(),')
 
   for (name, arg) in translations:
@@ -751,8 +742,7 @@ def generate_class_func(writer, func):
   writer.write_line(f'),')
   writer.write_line(f'None => panic!(),')
 
-  writer.indent(-1)
-  writer.write_line('};')
+  writer.write_line(-1, '};')
 
   for (name, arg) in translations:
     if not arg.rust_to_extern_restore(name): continue
@@ -769,10 +759,8 @@ def generate_class_func(writer, func):
   else:
     writer.write_line('ret')
 
-  writer.indent(-1)
-  writer.write_line(f'}}')
-  writer.indent(-1)
-  writer.write_line(f'}}')
+  writer.write_line(-1, f'}}')
+  writer.write_line(-1, f'}}')
 
   pass
 
@@ -788,8 +776,7 @@ def generate_interface(main_writer, cls):
 
   main_writer.write_line(f'#[allow(non_snake_case)]')
   main_writer.write_line(f'#[allow(unused_variables)]')
-  main_writer.write_line(f'pub trait {trait_name} {{')
-  main_writer.indent(+1)
+  main_writer.write_line(+1, f'pub trait {trait_name} {{')
 
   for func in cls.get_static_funcs():
     try:
@@ -810,30 +797,32 @@ def generate_interface(main_writer, cls):
 
   macro_impl.write_line(');')
 
-  main_writer.indent(-1)
-  main_writer.write_line(f'}}')
+  main_writer.write_line(-1, f'}}')
 
   main_writer.merge(macro_impl)
   main_writer.merge(unsafe_impl)
 
 def generate_interface_func(trait_impl, unsafe_impl, macro_impl, func):
   iface_name = get_c_type_name(func.parent.get_name())
-  func_name = get_c_func_name(func.get_name())
+  if func.has_attrib('capi_name'):
+    func_name = func.get_attrib('capi_name')
+  else:
+    func_name = get_c_func_name(func.get_name())
 
   typedefs = [*func.parent.get_typedefs(), *func.parent.parent.get_typedefs()]
   arguments = func.get_arguments()
-  arg_types = [parse_type(typedefs, x.get_type()) for x in arguments]
+  arg_types = [parse_type(x.get_type(), typedefs) for x in arguments]
 
   translations = []
 
   while len(arg_types) > 0:
     arg = arguments[-len(arg_types)]
-    translated = translate_arguments(arg_types, is_optional(arg, func))
+    translated = translate_arguments(arg_types, is_optional(arg, func), func)
     if translated:
       translations.append((map_identifier(arg.get_name()), translated))
 
   thisarg = translate_type(('refptr', ('interface', func.parent.get_name())))
-  rettype = parse_type(func.parent.get_typedefs(), func.get_retval().get_type())
+  rettype = parse_type(func.get_retval().get_type(), typedefs)
   if rettype[0] == 'primitive' and rettype[1] == 'void':
     retarg = type_unit()
   else:
@@ -868,8 +857,7 @@ def generate_interface_func(trait_impl, unsafe_impl, macro_impl, func):
         unsafe_impl.write(f', {name}{label}: {extern_parameter}')
         label += 1
 
-  unsafe_impl.write_line(f') -> {retarg.extern_type} {{')
-  unsafe_impl.indent(+1)
+  unsafe_impl.write_line(+1, f') -> {retarg.extern_type} {{')
 
   for (name, arg) in translations:
     if not arg.extern_to_rust_prepare(name): continue
@@ -904,34 +892,61 @@ def generate_interface_func(trait_impl, unsafe_impl, macro_impl, func):
 
   unsafe_impl.write_line(f'{retarg.rust_return_to_extern_return("ret")}')
 
-  unsafe_impl.indent(-1)
-  unsafe_impl.write_line(f'}}')
+  unsafe_impl.write_line(-1, f'}}')
 
-def translate_arguments(queue, optional):
+def translate_arguments(queue, optional, func):
   ty = queue.pop(0)
 
-  # &[_] - primitive slice
-  if ty[0] == 'ptr' and ty[1][0] == 'const' and ty[1][1][0] == 'primitive' and len(queue) > 0 and queue[0][1][0] == 'primitive' and queue[0][1][2] == 'u64':
-    (size_name, size_ty) = queue.pop()
+  def can_slice(element):
+    if element[0] == 'primitive' and element[2] != 'bool':
+      return True
 
-    return type_ref_list(translate_type(ty[1][1], False))
+    if element[0] == 'struct':
+      return True
+
+    return False
+
+  def can_slice_index(element):
+    return element[0] == 'primitive' and element[2] in ['u64', 'i32']
+
+  # &mut [_] - primitive slice
+  if ty[0] == 'ptr' and can_slice(ty[1]) and len(queue) > 0 and can_slice_index(queue[0]):
+    size_ty = queue.pop(0)
+
+    # print(f'primitive slice mut: {func.get_name()} {ty[1]}[{size_ty}]')
+
+    return type_mut_list(translate_type(ty[1], False), translate_type(size_ty, False), False)
+
+  # &[_] - primitive slice
+  if ty[0] == 'ptr' and ty[1][0] == 'const' and can_slice(ty[1][1]) and len(queue) > 0 and can_slice_index(queue[0]):
+    size_ty = queue.pop(0)
+
+    # print(f'primitive slice: {func.get_name()} {ty[1][1]}[{size_ty}]')
+
+    return type_ref_list(translate_type(ty[1][1], False), translate_type(size_ty, False), False)
+
+  # &mut [_] - primitive slice
+  if can_slice_index(ty) and len(queue) > 0 and queue[0][0] == 'ptr' and can_slice(queue[0][1]):
+    element_ty = queue.pop(0)[1]
+
+    # print(f'primitive slice mut B: {func.get_name()} {element_ty}[{ty}]')
+
+    return type_mut_list(translate_type(element_ty, False), translate_type(ty, False), True)
+
+  # &[_] - primitive slice
+  if can_slice_index(ty) and len(queue) > 0 and queue[0][0] == 'ptr' and queue[0][1][0] == 'const' and can_slice(queue[0][1][1]):
+    element_ty = queue.pop(0)[1][1]
+
+    # print(f'primitive slice B: {func.get_name()} {element_ty}[{ty}]')
+
+    return type_ref_list(translate_type(element_ty, False), translate_type(ty, False), True)
 
   else:
     return translate_type(ty, optional)
 
 def translate_type(ty, optional = False):
-  def is_base(ty):
-    return ty[0] in ['string', 'primitive', 'struct', 'object']
-
   def is_ref_or_ptr(ty):
     return ty[0] in ['ref', 'ptr']
-
-  def is_primitive(ty):
-    if ty[0] == 'primitive':
-      return True
-    if ty[0] in ['ref', 'ptr', 'const']:
-      return is_primitive(ty[1])
-    return False
 
   # CefObject
   if ty[0] == 'refptr':
@@ -943,37 +958,42 @@ def translate_type(ty, optional = False):
 
   # ?? &mut CefObject
   elif is_ref_or_ptr(ty) and ty[1][0] == 'refptr':
-    if optional: print(f'optional {ty}')
+    # if optional: print(f'optional {ty}')
     return type_mut_refptr(ty[1][1])
+
+  # ?? &CefObject
+  elif ty[0] == 'const' and ty[1][0] == 'refptr':
+    # if optional: print(f'optional {ty}')
+    return type_ref_refptr(ty[1][1])
 
   # ?? &mut CefObject
   elif ty[0] == 'rawptr':
-    if optional: print(f'optional {ty}')
+    # if optional: print(f'optional {ty}')
     return type_rawptr(ty[1])
 
   # CefString
   elif ty[0] == 'string':
-    if optional: print(f'optional {ty}')
-    return type_string()
+    # if optional: print(f'optional {ty}')
+    return type_string_userfree()
 
   # &mut CefString
   elif is_ref_or_ptr(ty) and ty[1][0] == 'string':
-    if optional: print(f'optional {ty}')
-    return type_mut_string()
+    # if optional: print(f'optional {ty}')
+    return type_mut_struct('CefString')
 
   # &CefString
   elif is_ref_or_ptr(ty) and ty[1][0] == 'const' and ty[1][1][0] == 'string':
-    if optional: return type_ref_string_option()
-    return type_ref_string()
+    if optional: return type_ref_struct_option('CefString')
+    return type_ref_struct('CefString')
 
   # CefStruct
   elif ty[0] == 'struct':
-    if optional: print(f'optional {ty}')
+    # if optional: print(f'optional {ty}')
     return type_struct(ty[1])
 
   # &mut CefStruct
   elif is_ref_or_ptr(ty) and ty[1][0] == 'struct':
-    if optional: print(f'optional {ty}')
+    # if optional: print(f'optional {ty}')
     return type_mut_struct(ty[1][1])
 
   # &CefStruct
@@ -1002,15 +1022,13 @@ def translate_type(ty, optional = False):
   # &CefStringList or &[_]
   elif is_ref_or_ptr(ty) and ty[1][0] == 'const' and ty[1][1][0] == 'vector':
     if ty[1][1][1][0] == 'string':
-      if optional: print(f'optional {ty}')
+      # if optional: print(f'optional {ty}')
       return type_ref_list_string()
 
     element = translate_type(ty[1][1][1])
-    print(f'list: {ty[1][1][1]}')
-    print(f'      {element.extern_to_rust_prepare("v")}')
 
-    if optional: print(f'optional {ty}')
-    return type_ref_list(element)
+    # if optional: print(f'optional {ty}')
+    return type_ref_list(element, translate_type(('primitive', 'size_t', 'u64'), False), True)
 
   # &mut CefStringMap
     # elif is_ref_or_ptr(ty) and ty[1][0] == 'map':
@@ -1062,12 +1080,12 @@ def translate_type(ty, optional = False):
 
   # &mut _ - primitive out bool
   elif is_ref_or_ptr(ty) and ty[1][0] == 'primitive' and ty[1][1] == 'bool':
-    if optional: print(f'optional {ty}')
+    # if optional: print(f'optional {ty}')
     return type_mut_bool()
 
   # bool
   elif ty[0] == 'primitive' and ty[1] == 'bool':
-    if optional: print(f'optional {ty}')
+    # if optional: print(f'optional {ty}')
     return type_bool()
 
   # # &mut _ - primitive out bool
@@ -1085,12 +1103,12 @@ def translate_type(ty, optional = False):
 
   # _ - primitive
   elif ty[0] == 'primitive':
-    if optional: print(f'optional {ty}')
+    # if optional: print(f'optional {ty}')
     return type_primitive(ty[2])
 
   else: raise RuntimeError(f'unsupported type {ty}')
 
-def parse_type(typedefs, ty):
+def parse_type(ty, typedefs = []):
   def parse_type(raw):
     raw = raw.strip()
     if raw in classes: return ('class', raw)
@@ -1109,37 +1127,34 @@ def parse_type(typedefs, ty):
     if raw == 'double': return ('primitive', raw, 'f64')
     if raw == 'void': return ('primitive', raw, 'std::os::raw::c_void')
 
-    if raw == 'CefEventHandle':
-      print(raw)
-
     typedef = next((x for x in typedefs if x.alias == raw), None)
     if typedef: return parse_type(typedef.get_value().get_value())
 
-    match = re.match(r'^CefRefPtr<(.*)>$', raw)
+    match = regex.match(r'^CefRefPtr<(.*)>$', raw)
     if match: return ('refptr', parse_type(match.group(1)))
 
-    match = re.match(r'^CefRawPtr<(.*)>$', raw)
+    match = regex.match(r'^CefRawPtr<(.*)>$', raw)
     if match: return ('rawptr', parse_type(match.group(1)))
 
-    match = re.match(r'^std::vector<(.*)>$', raw)
+    match = regex.match(r'^std::vector<(.*)>$', raw)
     if match: return ('vector', parse_type(match.group(1)))
 
-    match = re.match(r'^std::map<(.*),(.*)>$', raw)
+    match = regex.match(r'^std::map<(.*),(.*)>$', raw)
     if match: return ('map', parse_type(match.group(1)), parse_type(match.group(2)))
 
-    match = re.match(r'^std::multimap<(.*),(.*)>$', raw)
+    match = regex.match(r'^std::multimap<(.*),(.*)>$', raw)
     if match: return ('multimap', parse_type(match.group(1)), parse_type(match.group(2)))
 
-    match = re.match(r'^(.*)&$', raw)
+    match = regex.match(r'^(.*)&$', raw)
     if match: return ('ref', parse_type(match.group(1)))
 
-    match = re.match(r'^(.*)\*$', raw)
+    match = regex.match(r'^(.*)\*$', raw)
     if match: return ('ptr', parse_type(match.group(1)))
 
-    match = re.match(r'^(.*) const$', raw) or re.match(r'^const (.*)$', raw)
+    match = regex.match(r'^(.*) const$', raw) or regex.match(r'^const (.*)$', raw)
     if match: return ('const', parse_type(match.group(1)))
 
-    match = re.match(r'^cef.*$', raw, re.IGNORECASE)
+    match = regex.match(r'^cef.*$', raw, regex.IGNORECASE)
     if match:
       c_name = get_c_type_name(raw)
       rust_name = get_rust_type_name(raw)
@@ -1156,21 +1171,6 @@ def parse_type(typedefs, ty):
     raw = ty.get_type()
 
   return parse_type(raw)
-
-  def is_base(parsed):
-    return parsed[0] in ['string', 'primitive', 'struct', 'object']
-
-  def is_ref_or_ptr(parsed):
-    return parsed[0] in ['ref', 'ptr']
-
-  def is_primitive(parsed):
-    if parsed[0] == 'primitive':
-      return True
-    if parsed[0] in ['ref', 'ptr', 'const']:
-      return is_primitive(parsed[1])
-    return False
-
-  return ''
 
 def get_rust_type_name(name):
   if name[-2:] == '_t':
@@ -1242,7 +1242,7 @@ output_include_dir = os.path.join(output_dir, 'include', 'autogen')
 output_internal_dir = os.path.join(output_dir, 'include', 'internal', 'autogen')
 
 # make sure the header directory exists
-if not path_exists(cpp_header_dir):
+if not os.path.exists(cpp_header_dir):
   sys.stderr.write('Directory ' + cpp_header_dir + ' does not exist.')
   sys.exit()
 
@@ -1250,8 +1250,8 @@ if not path_exists(cpp_header_dir):
 sys.stdout.write('Parsing C++ headers from ' + cpp_header_dir + '...\n')
 header = obj_header()
 
-if not path_exists(output_include_dir): os.makedirs(output_include_dir)
-if not path_exists(output_internal_dir): os.makedirs(output_internal_dir)
+if not os.path.exists(output_include_dir): os.makedirs(output_include_dir)
+if not os.path.exists(output_internal_dir): os.makedirs(output_internal_dir)
 
 # add include files to be processed
 header.set_root_directory(cpp_header_dir)
@@ -1303,18 +1303,3 @@ with open(os.path.join(cpp_header_dir, 'internal', 'cef_types.h')) as src:
   generate_types(w, contents)
   with open(os.path.join(output_internal_dir, 'cef_types.rs'), 'w') as x:
     x.write(w.result)
-
-# buildfile = writer()
-# for structure in structures:
-#   buildfile.write_line(f'.whitelist_type("{structure}")')
-# for cls in classes:
-#   buildfile.write_line(f'.whitelist_type("{get_c_type_name(cls)}")')
-# for iface in interfaces:
-#   buildfile.write_line(f'.whitelist_type("{get_c_type_name(iface)}")')
-# for func in header.get_funcs():
-#   buildfile.write_line(f'.whitelist_function("{func.get_capi_name()}")')
-# for cls in header.get_classes():
-#   for static_func in cls.get_static_funcs():
-#     buildfile.write_line(f'.whitelist_function("{static_func.get_capi_name()}")')
-# with open(os.path.join(output_dir, 'build.rs'), 'w') as x:
-#   x.write(buildfile.result)

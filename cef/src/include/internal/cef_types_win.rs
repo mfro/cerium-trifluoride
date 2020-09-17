@@ -37,7 +37,7 @@ impl From<cef_sys::cef_window_info_t> for CefWindowInfo {
 #[rustfmt::skip]
 impl CefWindowInfo {
     pub fn ex_style(&self) -> cef_sys::DWORD { self.raw.ex_style }
-    pub fn window_name(&self) -> String { super::cef_string_to_string(&self.raw.window_name) }
+    pub fn window_name(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.window_name) }
     pub fn style(&self) -> cef_sys::DWORD { self.raw.style }
     pub fn x(&self) -> i32 { self.raw.x }
     pub fn y(&self) -> i32 { self.raw.y }
@@ -51,7 +51,7 @@ impl CefWindowInfo {
     pub fn window(&self) -> cef_sys::HWND { self.raw.window }
 
     pub fn set_ex_style(&mut self, v: cef_sys::DWORD) -> &mut Self { self.raw.ex_style = v; self }
-    pub fn set_window_name(&mut self, v: &str) -> &mut Self { super::str_to_cef_string(&mut self.raw.window_name, v); self }
+    pub fn set_window_name(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.window_name, v); self }
     pub fn set_style(&mut self, v: cef_sys::DWORD) -> &mut Self { self.raw.style = v; self }
     pub fn set_x(&mut self, v: i32) -> &mut Self { self.raw.x = v; self }
     pub fn set_y(&mut self, v: i32) -> &mut Self { self.raw.y = v; self }

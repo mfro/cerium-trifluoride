@@ -34,7 +34,7 @@ pub trait ResponseFilter {
   /// B. The user returns RESPONSE_FILTER_ERROR to indicate an error.
   /// 
   /// Do not keep a reference to the buffers passed to this method.
-  fn filter(&mut self, data_in: Option<&mut std::os::raw::c_void>, data_in_size: u64, data_in_read: &mut u64, data_out: &mut std::os::raw::c_void, data_out_size: u64, data_out_written: &mut u64) -> crate::include::internal::CefResponseFilterStatus { Default::default() }
+  fn filter(&mut self, data_in: &mut [u8], data_in_read: &mut u64, data_out: &mut [u8], data_out_written: &mut u64) -> crate::include::internal::CefResponseFilterStatus { Default::default() }
 }
 define_refcounted!(ResponseFilter, CefResponseFilter, cef_response_filter_t, init_filter: cef_response_filter_t_init_filter,filter: cef_response_filter_t_filter,);
 #[allow(non_snake_case)]
@@ -43,7 +43,7 @@ unsafe extern "C" fn cef_response_filter_t_init_filter(_self: *mut cef_sys::cef_
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
-unsafe extern "C" fn cef_response_filter_t_filter(_self: *mut cef_sys::cef_response_filter_t, data_in: *mut std::os::raw::c_void, data_in_size: u64, data_in_read: *mut u64, data_out: *mut std::os::raw::c_void, data_out_size: u64, data_out_written: *mut u64) -> cef_sys::cef_response_filter_status_t {
-  let ret = CefResponseFilter::from_cef(_self, true).get().filter(if data_in.is_null() { None } else { Some(&mut *data_in) },data_in_size,&mut *data_in_read,&mut *data_out,data_out_size,&mut *data_out_written,);
+unsafe extern "C" fn cef_response_filter_t_filter(_self: *mut cef_sys::cef_response_filter_t, data_in0: *mut std::os::raw::c_void, data_in1: u64, data_in_read: *mut u64, data_out0: *mut std::os::raw::c_void, data_out1: u64, data_out_written: *mut u64) -> cef_sys::cef_response_filter_status_t {
+  let ret = CefResponseFilter::from_cef(_self, true).get().filter(std::slice::from_raw_parts_mut(data_in0 as *mut _, data_in1 as _),&mut *data_in_read,std::slice::from_raw_parts_mut(data_out0 as *mut _, data_out1 as _),&mut *data_out_written,);
   ret.into()
 }

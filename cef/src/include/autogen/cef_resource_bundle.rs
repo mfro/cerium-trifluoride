@@ -1,4 +1,4 @@
-pub type CefResourceBundle = crate::include::base::CefProxy<cef_sys::cef_resource_bundle_t>;
+pub type CefResourceBundle = crate::include::refcounting::CefProxy<cef_sys::cef_resource_bundle_t>;
 #[allow(non_snake_case)]
 impl CefResourceBundle {
   /// Returns the global resource bundle instance.
@@ -12,13 +12,13 @@ impl CefResourceBundle {
   /// Returns the localized string for the specified |string_id| or an empty
   /// string if the value is not found. Include cef_pack_strings.h for a listing
   /// of valid string ID values.
-  pub fn get_localized_string(&mut self, string_id: i32) -> crate::include::internal::CefString {
+  pub fn get_localized_string(&mut self, string_id: i32) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_localized_string {
         Some(f) => f(self.raw.as_ptr(),string_id,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns a CefBinaryValue containing the decompressed contents of the

@@ -1,4 +1,4 @@
-pub type CefCommandLine = crate::include::base::CefProxy<cef_sys::cef_command_line_t>;
+pub type CefCommandLine = crate::include::refcounting::CefProxy<cef_sys::cef_command_line_t>;
 #[allow(non_snake_case)]
 impl CefCommandLine {
   /// Create a new CefCommandLine instance.
@@ -55,7 +55,7 @@ impl CefCommandLine {
   pub fn init_from_string(&mut self, command_line: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().init_from_string {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(command_line),),
+        Some(f) => f(self.raw.as_ptr(),command_line as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -74,30 +74,30 @@ impl CefCommandLine {
   }
   /// Constructs and returns the represented command line string. Use this method
   /// cautiously because quoting behavior is unclear.
-  pub fn get_command_line_string(&mut self) -> crate::include::internal::CefString {
+  pub fn get_command_line_string(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_command_line_string {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Get the program part of the command line string (the first item).
-  pub fn get_program(&mut self) -> crate::include::internal::CefString {
+  pub fn get_program(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_program {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Set the program part of the command line string (the first item).
   pub fn set_program(&mut self, program: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().set_program {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(program),),
+        Some(f) => f(self.raw.as_ptr(),program as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -117,7 +117,7 @@ impl CefCommandLine {
   pub fn has_switch(&mut self, name: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().has_switch {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -125,13 +125,13 @@ impl CefCommandLine {
   }
   /// Returns the value associated with the given switch. If the switch has no
   /// value or isn't present this method returns the empty string.
-  pub fn get_switch_value(&mut self, name: &crate::include::internal::CefString) -> crate::include::internal::CefString {
+  pub fn get_switch_value(&mut self, name: &crate::include::internal::CefString) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_switch_value {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Add a switch to the end of the command line. If the switch has no value
@@ -139,7 +139,7 @@ impl CefCommandLine {
   pub fn append_switch(&mut self, name: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().append_switch {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -149,7 +149,7 @@ impl CefCommandLine {
   pub fn append_switch_with_value(&mut self, name: &crate::include::internal::CefString, value: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().append_switch_with_value {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),crate::include::internal::IntoCef::into_cef(value),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,value as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -169,7 +169,7 @@ impl CefCommandLine {
   pub fn append_argument(&mut self, argument: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().append_argument {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(argument),),
+        Some(f) => f(self.raw.as_ptr(),argument as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -180,7 +180,7 @@ impl CefCommandLine {
   pub fn prepend_wrapper(&mut self, wrapper: &crate::include::internal::CefString) -> () {
     unsafe {
       let ret = match self.raw.as_ref().prepend_wrapper {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(wrapper),),
+        Some(f) => f(self.raw.as_ptr(),wrapper as *const _ as *const _,),
         None => panic!(),
       };
       ret

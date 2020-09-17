@@ -1,4 +1,4 @@
-pub type CefBeforeDownloadCallback = crate::include::base::CefProxy<cef_sys::cef_before_download_callback_t>;
+pub type CefBeforeDownloadCallback = crate::include::refcounting::CefProxy<cef_sys::cef_before_download_callback_t>;
 #[allow(non_snake_case)]
 impl CefBeforeDownloadCallback {
   /// Call to continue the download. Set |download_path| to the full file path
@@ -8,14 +8,14 @@ impl CefBeforeDownloadCallback {
   pub fn cont(&mut self, download_path: Option<&crate::include::internal::CefString>, show_dialog: bool) -> () {
     unsafe {
       let ret = match self.raw.as_ref().cont {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(download_path),if show_dialog { 1 } else { 0 },),
+        Some(f) => f(self.raw.as_ptr(),match download_path { Some(download_path) => download_path as *const _ as *const _, None => std::ptr::null_mut() },if show_dialog { 1 } else { 0 },),
         None => panic!(),
       };
       ret
     }
   }
 }
-pub type CefDownloadItemCallback = crate::include::base::CefProxy<cef_sys::cef_download_item_callback_t>;
+pub type CefDownloadItemCallback = crate::include::refcounting::CefProxy<cef_sys::cef_download_item_callback_t>;
 #[allow(non_snake_case)]
 impl CefDownloadItemCallback {
   /// Call to cancel the download.
@@ -70,7 +70,7 @@ pub trait DownloadHandler {
 define_refcounted!(DownloadHandler, CefDownloadHandler, cef_download_handler_t, on_before_download: cef_download_handler_t_on_before_download,on_download_updated: cef_download_handler_t_on_download_updated,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_download_handler_t_on_before_download(_self: *mut cef_sys::cef_download_handler_t, browser: *mut cef_sys::cef_browser_t, download_item: *mut cef_sys::cef_download_item_t, suggested_name: *const cef_sys::cef_string_t, callback: *mut cef_sys::cef_before_download_callback_t) -> () {
-  let ret = CefDownloadHandler::from_cef(_self, true).get().on_before_download(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefDownloadItem::from_cef_own(download_item).unwrap(),&crate::include::internal::CefString::from_cef(suggested_name).unwrap(),crate::include::CefBeforeDownloadCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefDownloadHandler::from_cef(_self, true).get().on_before_download(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefDownloadItem::from_cef_own(download_item).unwrap(),&*(suggested_name as *const _),crate::include::CefBeforeDownloadCallback::from_cef_own(callback).unwrap(),);
   ret
 }
 #[allow(non_snake_case)]

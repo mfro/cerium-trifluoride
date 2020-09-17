@@ -1,4 +1,4 @@
-pub type CefV8Context = crate::include::base::CefProxy<cef_sys::cef_v8context_t>;
+pub type CefV8Context = crate::include::refcounting::CefProxy<cef_sys::cef_v8context_t>;
 #[allow(non_snake_case)]
 impl CefV8Context {
   /// Returns the current (top) context object in the V8 context stack.
@@ -129,7 +129,7 @@ impl CefV8Context {
       let mut retval__tmp = crate::include::CefV8Value::to_cef_ref(retval);
       let mut exception__tmp = crate::include::CefV8Exception::to_cef_ref(exception);
       let ret = match self.raw.as_ref().eval {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(code),crate::include::internal::IntoCef::into_cef(script_url),start_line,&mut retval__tmp,&mut exception__tmp,),
+        Some(f) => f(self.raw.as_ptr(),code as *const _ as *const _,match script_url { Some(script_url) => script_url as *const _ as *const _, None => std::ptr::null_mut() },start_line,&mut retval__tmp,&mut exception__tmp,),
         None => panic!(),
       };
       *retval = crate::include::CefV8Value::from_cef_own(retval__tmp).unwrap();
@@ -151,8 +151,32 @@ define_refcounted!(V8Handler, CefV8Handler, cef_v8handler_t, );
 #[allow(non_snake_case)]
 #[allow(unused_variables)]
 pub trait V8Accessor {
+  /// Handle retrieval the accessor value identified by |name|. |object| is the
+  /// receiver ('this' object) of the accessor. If retrieval succeeds set
+  /// |retval| to the return value. If retrieval fails set |exception| to the
+  /// exception that will be thrown. Return true if accessor retrieval was
+  /// handled.
+  fn get(&mut self, name: &crate::include::internal::CefString, object: &crate::include::CefV8Value, retval: &mut crate::include::CefV8Value, exception: &mut crate::include::internal::CefString) -> bool { Default::default() }
+  /// Handle assignment of the accessor value identified by |name|. |object| is
+  /// the receiver ('this' object) of the accessor. |value| is the new value
+  /// being assigned to the accessor. If assignment fails set |exception| to the
+  /// exception that will be thrown. Return true if accessor assignment was
+  /// handled.
+  fn set(&mut self, name: &crate::include::internal::CefString, object: &crate::include::CefV8Value, value: &crate::include::CefV8Value, exception: &mut crate::include::internal::CefString) -> bool { Default::default() }
 }
-define_refcounted!(V8Accessor, CefV8Accessor, cef_v8accessor_t, );
+define_refcounted!(V8Accessor, CefV8Accessor, cef_v8accessor_t, get: cef_v8accessor_t_get,set: cef_v8accessor_t_set,);
+#[allow(non_snake_case)]
+unsafe extern "C" fn cef_v8accessor_t_get(_self: *mut cef_sys::cef_v8accessor_t, name: *const cef_sys::cef_string_t, object: *mut cef_sys::cef_v8value_t, retval: *mut *mut cef_sys::cef_v8value_t, exception: *mut cef_sys::cef_string_t) -> i32 {
+  let mut retval__tmp = crate::include::CefV8Value::from_cef_own(*retval).unwrap();
+  let ret = CefV8Accessor::from_cef(_self, true).get().get(&*(name as *const _),&*(object as *const _),&mut retval__tmp,&mut *(exception as *mut _),);
+  *retval = crate::include::CefV8Value::to_cef_own(retval__tmp);
+  if ret { 1 } else { 0 }
+}
+#[allow(non_snake_case)]
+unsafe extern "C" fn cef_v8accessor_t_set(_self: *mut cef_sys::cef_v8accessor_t, name: *const cef_sys::cef_string_t, object: *mut cef_sys::cef_v8value_t, value: *mut cef_sys::cef_v8value_t, exception: *mut cef_sys::cef_string_t) -> i32 {
+  let ret = CefV8Accessor::from_cef(_self, true).get().set(&*(name as *const _),&*(object as *const _),&*(value as *const _),&mut *(exception as *mut _),);
+  if ret { 1 } else { 0 }
+}
 /// Interface that should be implemented to handle V8 interceptor calls. The
 /// methods of this class will be called on the thread associated with the V8
 /// interceptor. Interceptor's named property handlers (with first argument of
@@ -162,40 +186,92 @@ define_refcounted!(V8Accessor, CefV8Accessor, cef_v8accessor_t, );
 #[allow(non_snake_case)]
 #[allow(unused_variables)]
 pub trait V8Interceptor {
+  /// Handle retrieval of the interceptor value identified by |name|. |object| is
+  /// the receiver ('this' object) of the interceptor. If retrieval succeeds, set
+  /// |retval| to the return value. If the requested value does not exist, don't
+  /// set either |retval| or |exception|. If retrieval fails, set |exception| to
+  /// the exception that will be thrown. If the property has an associated
+  /// accessor, it will be called only if you don't set |retval|.
+  /// Return true if interceptor retrieval was handled, false otherwise.
+  fn get_byname(&mut self, name: &crate::include::internal::CefString, object: &crate::include::CefV8Value, retval: &mut crate::include::CefV8Value, exception: &mut crate::include::internal::CefString) -> bool { Default::default() }
+  /// Handle retrieval of the interceptor value identified by |index|. |object|
+  /// is the receiver ('this' object) of the interceptor. If retrieval succeeds,
+  /// set |retval| to the return value. If the requested value does not exist,
+  /// don't set either |retval| or |exception|. If retrieval fails, set
+  /// |exception| to the exception that will be thrown.
+  /// Return true if interceptor retrieval was handled, false otherwise.
+  fn get_byindex(&mut self, index: i32, object: &crate::include::CefV8Value, retval: &mut crate::include::CefV8Value, exception: &mut crate::include::internal::CefString) -> bool { Default::default() }
+  /// Handle assignment of the interceptor value identified by |name|. |object|
+  /// is the receiver ('this' object) of the interceptor. |value| is the new
+  /// value being assigned to the interceptor. If assignment fails, set
+  /// |exception| to the exception that will be thrown. This setter will always
+  /// be called, even when the property has an associated accessor.
+  /// Return true if interceptor assignment was handled, false otherwise.
+  fn set_byname(&mut self, name: &crate::include::internal::CefString, object: &crate::include::CefV8Value, value: &crate::include::CefV8Value, exception: &mut crate::include::internal::CefString) -> bool { Default::default() }
+  /// Handle assignment of the interceptor value identified by |index|. |object|
+  /// is the receiver ('this' object) of the interceptor. |value| is the new
+  /// value being assigned to the interceptor. If assignment fails, set
+  /// |exception| to the exception that will be thrown.
+  /// Return true if interceptor assignment was handled, false otherwise.
+  fn set_byindex(&mut self, index: i32, object: &crate::include::CefV8Value, value: &crate::include::CefV8Value, exception: &mut crate::include::internal::CefString) -> bool { Default::default() }
 }
-define_refcounted!(V8Interceptor, CefV8Interceptor, cef_v8interceptor_t, );
-pub type CefV8Exception = crate::include::base::CefProxy<cef_sys::cef_v8exception_t>;
+define_refcounted!(V8Interceptor, CefV8Interceptor, cef_v8interceptor_t, get_byname: cef_v8interceptor_t_get_byname,get_byindex: cef_v8interceptor_t_get_byindex,set_byname: cef_v8interceptor_t_set_byname,set_byindex: cef_v8interceptor_t_set_byindex,);
+#[allow(non_snake_case)]
+unsafe extern "C" fn cef_v8interceptor_t_get_byname(_self: *mut cef_sys::cef_v8interceptor_t, name: *const cef_sys::cef_string_t, object: *mut cef_sys::cef_v8value_t, retval: *mut *mut cef_sys::cef_v8value_t, exception: *mut cef_sys::cef_string_t) -> i32 {
+  let mut retval__tmp = crate::include::CefV8Value::from_cef_own(*retval).unwrap();
+  let ret = CefV8Interceptor::from_cef(_self, true).get().get_byname(&*(name as *const _),&*(object as *const _),&mut retval__tmp,&mut *(exception as *mut _),);
+  *retval = crate::include::CefV8Value::to_cef_own(retval__tmp);
+  if ret { 1 } else { 0 }
+}
+#[allow(non_snake_case)]
+unsafe extern "C" fn cef_v8interceptor_t_get_byindex(_self: *mut cef_sys::cef_v8interceptor_t, index: i32, object: *mut cef_sys::cef_v8value_t, retval: *mut *mut cef_sys::cef_v8value_t, exception: *mut cef_sys::cef_string_t) -> i32 {
+  let mut retval__tmp = crate::include::CefV8Value::from_cef_own(*retval).unwrap();
+  let ret = CefV8Interceptor::from_cef(_self, true).get().get_byindex(index,&*(object as *const _),&mut retval__tmp,&mut *(exception as *mut _),);
+  *retval = crate::include::CefV8Value::to_cef_own(retval__tmp);
+  if ret { 1 } else { 0 }
+}
+#[allow(non_snake_case)]
+unsafe extern "C" fn cef_v8interceptor_t_set_byname(_self: *mut cef_sys::cef_v8interceptor_t, name: *const cef_sys::cef_string_t, object: *mut cef_sys::cef_v8value_t, value: *mut cef_sys::cef_v8value_t, exception: *mut cef_sys::cef_string_t) -> i32 {
+  let ret = CefV8Interceptor::from_cef(_self, true).get().set_byname(&*(name as *const _),&*(object as *const _),&*(value as *const _),&mut *(exception as *mut _),);
+  if ret { 1 } else { 0 }
+}
+#[allow(non_snake_case)]
+unsafe extern "C" fn cef_v8interceptor_t_set_byindex(_self: *mut cef_sys::cef_v8interceptor_t, index: i32, object: *mut cef_sys::cef_v8value_t, value: *mut cef_sys::cef_v8value_t, exception: *mut cef_sys::cef_string_t) -> i32 {
+  let ret = CefV8Interceptor::from_cef(_self, true).get().set_byindex(index,&*(object as *const _),&*(value as *const _),&mut *(exception as *mut _),);
+  if ret { 1 } else { 0 }
+}
+pub type CefV8Exception = crate::include::refcounting::CefProxy<cef_sys::cef_v8exception_t>;
 #[allow(non_snake_case)]
 impl CefV8Exception {
   /// Returns the exception message.
-  pub fn get_message(&mut self) -> crate::include::internal::CefString {
+  pub fn get_message(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_message {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the line of source code that the exception occurred within.
-  pub fn get_source_line(&mut self) -> crate::include::internal::CefString {
+  pub fn get_source_line(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_source_line {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the resource name for the script from where the function causing
   /// the error originates.
-  pub fn get_script_resource_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_script_resource_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_script_resource_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the 1-based number of the line where the error occurred or 0 if the
@@ -269,7 +345,7 @@ unsafe extern "C" fn cef_v8array_buffer_release_callback_t_release_buffer(_self:
   let ret = CefV8ArrayBufferReleaseCallback::from_cef(_self, true).get().release_buffer(&mut *buffer,);
   ret
 }
-pub type CefV8Value = crate::include::base::CefProxy<cef_sys::cef_v8value_t>;
+pub type CefV8Value = crate::include::refcounting::CefProxy<cef_sys::cef_v8value_t>;
 #[allow(non_snake_case)]
 impl CefV8Value {
   /// Create a new CefV8Value object of type undefined.
@@ -327,7 +403,7 @@ impl CefV8Value {
   #[allow(non_snake_case)]
   pub fn create_string(value: Option<&crate::include::internal::CefString>, ) -> Option<crate::include::CefV8Value> {
     unsafe {
-      let ret = cef_sys::cef_v8value_create_string(crate::include::internal::IntoCef::into_cef(value),);
+      let ret = cef_sys::cef_v8value_create_string(match value { Some(value) => value as *const _ as *const _, None => std::ptr::null_mut() },);
       crate::include::CefV8Value::from_cef_own(ret)
     }
   }
@@ -364,9 +440,9 @@ impl CefV8Value {
   /// combination with calling Enter() and Exit() on a stored CefV8Context
   /// reference.
   #[allow(non_snake_case)]
-  pub fn create_array_buffer(buffer: &mut std::os::raw::c_void, length: u64, release_callback: crate::include::CefV8ArrayBufferReleaseCallback, ) -> Option<crate::include::CefV8Value> {
+  pub fn create_array_buffer(buffer: &mut [u8], release_callback: crate::include::CefV8ArrayBufferReleaseCallback, ) -> Option<crate::include::CefV8Value> {
     unsafe {
-      let ret = cef_sys::cef_v8value_create_array_buffer(buffer,length,crate::include::CefV8ArrayBufferReleaseCallback::to_cef_own(release_callback),);
+      let ret = cef_sys::cef_v8value_create_array_buffer(buffer.as_mut_ptr() as *mut _,buffer.len() as _,crate::include::CefV8ArrayBufferReleaseCallback::to_cef_own(release_callback),);
       crate::include::CefV8Value::from_cef_own(ret)
     }
   }
@@ -377,7 +453,7 @@ impl CefV8Value {
   #[allow(non_snake_case)]
   pub fn create_function(name: &crate::include::internal::CefString, handler: crate::include::CefV8Handler, ) -> Option<crate::include::CefV8Value> {
     unsafe {
-      let ret = cef_sys::cef_v8value_create_function(crate::include::internal::IntoCef::into_cef(name),crate::include::CefV8Handler::to_cef_own(handler),);
+      let ret = cef_sys::cef_v8value_create_function(name as *const _ as *const _,crate::include::CefV8Handler::to_cef_own(handler),);
       crate::include::CefV8Value::from_cef_own(ret)
     }
   }
@@ -565,13 +641,13 @@ impl CefV8Value {
     }
   }
   /// Return a string value.
-  pub fn get_string_value(&mut self) -> crate::include::internal::CefString {
+  pub fn get_string_value(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_string_value {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// OBJECT METHODS - These methods are only available on objects. Arrays and
@@ -648,7 +724,7 @@ impl CefV8Value {
   pub fn has_value_bykey(&mut self, key: Option<&crate::include::internal::CefString>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().has_value_bykey {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),match key { Some(key) => key as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -671,7 +747,7 @@ impl CefV8Value {
   pub fn delete_value_bykey(&mut self, key: Option<&crate::include::internal::CefString>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().delete_value_bykey {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),match key { Some(key) => key as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -695,7 +771,7 @@ impl CefV8Value {
   pub fn get_value_bykey(&mut self, key: Option<&crate::include::internal::CefString>) -> Option<crate::include::CefV8Value> {
     unsafe {
       let ret = match self.raw.as_ref().get_value_bykey {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),match key { Some(key) => key as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       crate::include::CefV8Value::from_cef_own(ret)
@@ -719,7 +795,7 @@ impl CefV8Value {
   pub fn set_value_bykey(&mut self, key: Option<&crate::include::internal::CefString>, value: crate::include::CefV8Value, attribute: crate::include::internal::CefV8Propertyattribute) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_value_bykey {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),crate::include::CefV8Value::to_cef_own(value),attribute.into(),),
+        Some(f) => f(self.raw.as_ptr(),match key { Some(key) => key as *const _ as *const _, None => std::ptr::null_mut() },crate::include::CefV8Value::to_cef_own(value),attribute.into(),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -746,7 +822,7 @@ impl CefV8Value {
   pub fn set_value_byaccessor(&mut self, key: Option<&crate::include::internal::CefString>, settings: crate::include::internal::CefV8Accesscontrol, attribute: crate::include::internal::CefV8Propertyattribute) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_value_byaccessor {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),settings.into(),attribute.into(),),
+        Some(f) => f(self.raw.as_ptr(),match key { Some(key) => key as *const _ as *const _, None => std::ptr::null_mut() },settings.into(),attribute.into(),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -819,13 +895,13 @@ impl CefV8Value {
   }
   /// FUNCTION METHODS - These methods are only available on functions.
   /// Returns the function name.
-  pub fn get_function_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_function_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_function_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the function handler or NULL if not a CEF-created function.
@@ -839,7 +915,7 @@ impl CefV8Value {
     }
   }
 }
-pub type CefV8StackTrace = crate::include::base::CefProxy<cef_sys::cef_v8stack_trace_t>;
+pub type CefV8StackTrace = crate::include::refcounting::CefProxy<cef_sys::cef_v8stack_trace_t>;
 #[allow(non_snake_case)]
 impl CefV8StackTrace {
   /// Returns the stack trace for the currently active context. |frame_limit| is
@@ -884,7 +960,7 @@ impl CefV8StackTrace {
     }
   }
 }
-pub type CefV8StackFrame = crate::include::base::CefProxy<cef_sys::cef_v8stack_frame_t>;
+pub type CefV8StackFrame = crate::include::refcounting::CefProxy<cef_sys::cef_v8stack_frame_t>;
 #[allow(non_snake_case)]
 impl CefV8StackFrame {
   /// Returns true if the underlying handle is valid and it can be accessed on
@@ -900,35 +976,35 @@ impl CefV8StackFrame {
     }
   }
   /// Returns the name of the resource script that contains the function.
-  pub fn get_script_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_script_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_script_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the name of the resource script that contains the function or the
   /// sourceURL value if the script name is undefined and its source ends with
   /// a "//@ sourceURL=..." string.
-  pub fn get_script_name_or_source_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_script_name_or_source_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_script_name_or_source_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the name of the function.
-  pub fn get_function_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_function_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_function_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the 1-based line number for the function call or 0 if unknown.
@@ -1033,7 +1109,7 @@ impl CefV8StackFrame {
 #[allow(non_snake_case)]
 pub fn cef_register_extension(extension_name: &crate::include::internal::CefString, javascript_code: &crate::include::internal::CefString, handler: Option<crate::include::CefV8Handler>, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_register_extension(crate::include::internal::IntoCef::into_cef(extension_name),crate::include::internal::IntoCef::into_cef(javascript_code),handler.map_or(std::ptr::null_mut(), |o| crate::include::CefV8Handler::to_cef_own(o)),);
+    let ret = cef_sys::cef_register_extension(extension_name as *const _ as *const _,javascript_code as *const _ as *const _,handler.map_or(std::ptr::null_mut(), |o| crate::include::CefV8Handler::to_cef_own(o)),);
     if ret == 0 { false } else { true }
   }
 }

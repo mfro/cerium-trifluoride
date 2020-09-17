@@ -1,4 +1,4 @@
-pub type CefCookieManager = crate::include::base::CefProxy<cef_sys::cef_cookie_manager_t>;
+pub type CefCookieManager = crate::include::refcounting::CefProxy<cef_sys::cef_cookie_manager_t>;
 #[allow(non_snake_case)]
 impl CefCookieManager {
   /// Returns the global cookie manager. By default data will be stored at
@@ -49,7 +49,7 @@ impl CefCookieManager {
   pub fn visit_url_cookies(&mut self, url: &crate::include::internal::CefString, includeHttpOnly: bool, visitor: crate::include::CefCookieVisitor) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().visit_url_cookies {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(url),if includeHttpOnly { 1 } else { 0 },crate::include::CefCookieVisitor::to_cef_own(visitor),),
+        Some(f) => f(self.raw.as_ptr(),url as *const _ as *const _,if includeHttpOnly { 1 } else { 0 },crate::include::CefCookieVisitor::to_cef_own(visitor),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -65,7 +65,7 @@ impl CefCookieManager {
   pub fn set_cookie(&mut self, url: &crate::include::internal::CefString, cookie: &crate::include::internal::CefCookie, callback: Option<crate::include::CefSetCookieCallback>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_cookie {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(url),cookie as *const _ as *const _,callback.map_or(std::ptr::null_mut(), |o| crate::include::CefSetCookieCallback::to_cef_own(o)),),
+        Some(f) => f(self.raw.as_ptr(),url as *const _ as *const _,cookie as *const _ as *const _,callback.map_or(std::ptr::null_mut(), |o| crate::include::CefSetCookieCallback::to_cef_own(o)),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -83,7 +83,7 @@ impl CefCookieManager {
   pub fn delete_cookies(&mut self, url: Option<&crate::include::internal::CefString>, cookie_name: Option<&crate::include::internal::CefString>, callback: Option<crate::include::CefDeleteCookiesCallback>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().delete_cookies {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(url),crate::include::internal::IntoCef::into_cef(cookie_name),callback.map_or(std::ptr::null_mut(), |o| crate::include::CefDeleteCookiesCallback::to_cef_own(o)),),
+        Some(f) => f(self.raw.as_ptr(),match url { Some(url) => url as *const _ as *const _, None => std::ptr::null_mut() },match cookie_name { Some(cookie_name) => cookie_name as *const _ as *const _, None => std::ptr::null_mut() },callback.map_or(std::ptr::null_mut(), |o| crate::include::CefDeleteCookiesCallback::to_cef_own(o)),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }

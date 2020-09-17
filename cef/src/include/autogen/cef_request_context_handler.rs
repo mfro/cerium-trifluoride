@@ -50,13 +50,13 @@ unsafe extern "C" fn cef_request_context_handler_t_on_request_context_initialize
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_request_context_handler_t_on_before_plugin_load(_self: *mut cef_sys::cef_request_context_handler_t, mime_type: *const cef_sys::cef_string_t, plugin_url: *const cef_sys::cef_string_t, is_main_frame: i32, top_origin_url: *const cef_sys::cef_string_t, plugin_info: *mut cef_sys::cef_web_plugin_info_t, plugin_policy: *mut cef_sys::cef_plugin_policy_t) -> i32 {
-  let ret = CefRequestContextHandler::from_cef(_self, true).get().on_before_plugin_load(&crate::include::internal::CefString::from_cef(mime_type).unwrap(),match &crate::include::internal::CefString::from_cef(plugin_url) { Some(ref x) => Some(x), None => None },if is_main_frame == 0 { false } else { true },match &crate::include::internal::CefString::from_cef(top_origin_url) { Some(ref x) => Some(x), None => None },crate::include::CefWebPluginInfo::from_cef_own(plugin_info).unwrap(),&mut *(plugin_policy as *mut _),);
+  let ret = CefRequestContextHandler::from_cef(_self, true).get().on_before_plugin_load(&*(mime_type as *const _),if plugin_url.is_null() { None } else { Some(&*(plugin_url as *const _)) },if is_main_frame == 0 { false } else { true },if top_origin_url.is_null() { None } else { Some(&*(top_origin_url as *const _)) },crate::include::CefWebPluginInfo::from_cef_own(plugin_info).unwrap(),&mut *(plugin_policy as *mut _),);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_request_context_handler_t_get_resource_request_handler(_self: *mut cef_sys::cef_request_context_handler_t, browser: *mut cef_sys::cef_browser_t, frame: *mut cef_sys::cef_frame_t, request: *mut cef_sys::cef_request_t, is_navigation: i32, is_download: i32, request_initiator: *const cef_sys::cef_string_t, disable_default_handling: *mut i32) -> *mut cef_sys::cef_resource_request_handler_t {
   let mut disable_default_handling__tmp = if *disable_default_handling == 0 { false } else { true };
-  let ret = CefRequestContextHandler::from_cef(_self, true).get().get_resource_request_handler(crate::include::CefBrowser::from_cef_own(browser),crate::include::CefFrame::from_cef_own(frame),crate::include::CefRequest::from_cef_own(request).unwrap(),if is_navigation == 0 { false } else { true },if is_download == 0 { false } else { true },match &crate::include::internal::CefString::from_cef(request_initiator) { Some(ref x) => Some(x), None => None },&mut disable_default_handling__tmp,);
+  let ret = CefRequestContextHandler::from_cef(_self, true).get().get_resource_request_handler(crate::include::CefBrowser::from_cef_own(browser),crate::include::CefFrame::from_cef_own(frame),crate::include::CefRequest::from_cef_own(request).unwrap(),if is_navigation == 0 { false } else { true },if is_download == 0 { false } else { true },if request_initiator.is_null() { None } else { Some(&*(request_initiator as *const _)) },&mut disable_default_handling__tmp,);
   *disable_default_handling = if disable_default_handling__tmp { 1 } else { 0 };
   ret.map_or(std::ptr::null_mut(), |o| crate::include::CefResourceRequestHandler::to_cef_own(o))
 }

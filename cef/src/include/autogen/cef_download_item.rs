@@ -1,4 +1,4 @@
-pub type CefDownloadItem = crate::include::base::CefProxy<cef_sys::cef_download_item_t>;
+pub type CefDownloadItem = crate::include::refcounting::CefProxy<cef_sys::cef_download_item_t>;
 #[allow(non_snake_case)]
 impl CefDownloadItem {
   /// Returns true if this object is valid. Do not call any other methods if this
@@ -104,13 +104,13 @@ impl CefDownloadItem {
     }
   }
   /// Returns the full path to the downloaded or downloading file.
-  pub fn get_full_path(&mut self) -> crate::include::internal::CefString {
+  pub fn get_full_path(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_full_path {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the unique identifier for this download.
@@ -124,53 +124,53 @@ impl CefDownloadItem {
     }
   }
   /// Returns the URL.
-  pub fn get_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the original URL before any redirections.
-  pub fn get_original_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_original_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_original_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the suggested file name.
-  pub fn get_suggested_file_name(&mut self) -> crate::include::internal::CefString {
+  pub fn get_suggested_file_name(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_suggested_file_name {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the content disposition.
-  pub fn get_content_disposition(&mut self) -> crate::include::internal::CefString {
+  pub fn get_content_disposition(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_content_disposition {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the mime type.
-  pub fn get_mime_type(&mut self) -> crate::include::internal::CefString {
+  pub fn get_mime_type(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_mime_type {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
 }

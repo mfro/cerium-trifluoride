@@ -1,4 +1,4 @@
-pub type CefValue = crate::include::base::CefProxy<cef_sys::cef_value_t>;
+pub type CefValue = crate::include::refcounting::CefProxy<cef_sys::cef_value_t>;
 #[allow(non_snake_case)]
 impl CefValue {
   /// Creates a new object.
@@ -119,13 +119,13 @@ impl CefValue {
     }
   }
   /// Returns the underlying value as type string.
-  pub fn get_string(&mut self) -> crate::include::internal::CefString {
+  pub fn get_string(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_string {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the underlying value as type binary. The returned reference may
@@ -222,7 +222,7 @@ impl CefValue {
   pub fn set_string(&mut self, value: Option<&crate::include::internal::CefString>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_string {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(value),),
+        Some(f) => f(self.raw.as_ptr(),match value { Some(value) => value as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -265,9 +265,18 @@ impl CefValue {
     }
   }
 }
-pub type CefBinaryValue = crate::include::base::CefProxy<cef_sys::cef_binary_value_t>;
+pub type CefBinaryValue = crate::include::refcounting::CefProxy<cef_sys::cef_binary_value_t>;
 #[allow(non_snake_case)]
 impl CefBinaryValue {
+  /// Creates a new object that is not owned by any other object. The specified
+  /// |data| will be copied.
+  #[allow(non_snake_case)]
+  pub fn create(data: &[u8], ) -> Option<crate::include::CefBinaryValue> {
+    unsafe {
+      let ret = cef_sys::cef_binary_value_create(data.as_ptr() as *const _,data.len() as _,);
+      crate::include::CefBinaryValue::from_cef_own(ret)
+    }
+  }
   /// Returns true if this object is valid. This object may become invalid if
   /// the underlying data is owned by another object (e.g. list or dictionary)
   /// and that other object is then modified or destroyed. Do not call any other
@@ -335,17 +344,17 @@ impl CefBinaryValue {
   }
   /// Read up to |buffer_size| number of bytes into |buffer|. Reading begins at
   /// the specified byte |data_offset|. Returns the number of bytes read.
-  pub fn get_data(&mut self, buffer: &mut std::os::raw::c_void, buffer_size: u64, data_offset: u64) -> u64 {
+  pub fn get_data(&mut self, buffer: &mut [u8], data_offset: u64) -> u64 {
     unsafe {
       let ret = match self.raw.as_ref().get_data {
-        Some(f) => f(self.raw.as_ptr(),buffer,buffer_size,data_offset,),
+        Some(f) => f(self.raw.as_ptr(),buffer.as_mut_ptr() as *mut _,buffer.len() as _,data_offset,),
         None => panic!(),
       };
       ret
     }
   }
 }
-pub type CefDictionaryValue = crate::include::base::CefProxy<cef_sys::cef_dictionary_value_t>;
+pub type CefDictionaryValue = crate::include::refcounting::CefProxy<cef_sys::cef_dictionary_value_t>;
 #[allow(non_snake_case)]
 impl CefDictionaryValue {
   /// Creates a new object that is not owned by any other object.
@@ -448,7 +457,7 @@ impl CefDictionaryValue {
   pub fn has_key(&mut self, key: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().has_key {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -459,7 +468,7 @@ impl CefDictionaryValue {
   pub fn remove(&mut self, key: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().remove {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -469,7 +478,7 @@ impl CefDictionaryValue {
   pub fn get_type(&mut self, key: &crate::include::internal::CefString) -> crate::include::internal::CefValueType {
     unsafe {
       let ret = match self.raw.as_ref().get_type {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       ret.into()
@@ -483,7 +492,7 @@ impl CefDictionaryValue {
   pub fn get_value(&mut self, key: &crate::include::internal::CefString) -> Option<crate::include::CefValue> {
     unsafe {
       let ret = match self.raw.as_ref().get_value {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefValue::from_cef_own(ret)
@@ -493,7 +502,7 @@ impl CefDictionaryValue {
   pub fn get_bool(&mut self, key: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().get_bool {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -503,7 +512,7 @@ impl CefDictionaryValue {
   pub fn get_int(&mut self, key: &crate::include::internal::CefString) -> i32 {
     unsafe {
       let ret = match self.raw.as_ref().get_int {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       ret
@@ -513,20 +522,20 @@ impl CefDictionaryValue {
   pub fn get_double(&mut self, key: &crate::include::internal::CefString) -> f64 {
     unsafe {
       let ret = match self.raw.as_ref().get_double {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       ret
     }
   }
   /// Returns the value at the specified key as type string.
-  pub fn get_string(&mut self, key: &crate::include::internal::CefString) -> crate::include::internal::CefString {
+  pub fn get_string(&mut self, key: &crate::include::internal::CefString) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_string {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the value at the specified key as type binary. The returned
@@ -534,7 +543,7 @@ impl CefDictionaryValue {
   pub fn get_binary(&mut self, key: &crate::include::internal::CefString) -> Option<crate::include::CefBinaryValue> {
     unsafe {
       let ret = match self.raw.as_ref().get_binary {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefBinaryValue::from_cef_own(ret)
@@ -546,7 +555,7 @@ impl CefDictionaryValue {
   pub fn get_dictionary(&mut self, key: &crate::include::internal::CefString) -> Option<crate::include::CefDictionaryValue> {
     unsafe {
       let ret = match self.raw.as_ref().get_dictionary {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefDictionaryValue::from_cef_own(ret)
@@ -558,7 +567,7 @@ impl CefDictionaryValue {
   pub fn get_list(&mut self, key: &crate::include::internal::CefString) -> Option<crate::include::CefListValue> {
     unsafe {
       let ret = match self.raw.as_ref().get_list {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefListValue::from_cef_own(ret)
@@ -573,7 +582,7 @@ impl CefDictionaryValue {
   pub fn set_value(&mut self, key: &crate::include::internal::CefString, value: crate::include::CefValue) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_value {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),crate::include::CefValue::to_cef_own(value),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,crate::include::CefValue::to_cef_own(value),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -584,7 +593,7 @@ impl CefDictionaryValue {
   pub fn set_null(&mut self, key: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_null {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -595,7 +604,7 @@ impl CefDictionaryValue {
   pub fn set_bool(&mut self, key: &crate::include::internal::CefString, value: bool) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_bool {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),if value { 1 } else { 0 },),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,if value { 1 } else { 0 },),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -606,7 +615,7 @@ impl CefDictionaryValue {
   pub fn set_int(&mut self, key: &crate::include::internal::CefString, value: i32) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_int {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),value,),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,value,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -617,7 +626,7 @@ impl CefDictionaryValue {
   pub fn set_double(&mut self, key: &crate::include::internal::CefString, value: f64) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_double {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),value,),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,value,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -628,7 +637,7 @@ impl CefDictionaryValue {
   pub fn set_string(&mut self, key: &crate::include::internal::CefString, value: Option<&crate::include::internal::CefString>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_string {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),crate::include::internal::IntoCef::into_cef(value),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,match value { Some(value) => value as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -642,7 +651,7 @@ impl CefDictionaryValue {
   pub fn set_binary(&mut self, key: &crate::include::internal::CefString, value: crate::include::CefBinaryValue) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_binary {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),crate::include::CefBinaryValue::to_cef_own(value),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,crate::include::CefBinaryValue::to_cef_own(value),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -656,7 +665,7 @@ impl CefDictionaryValue {
   pub fn set_dictionary(&mut self, key: &crate::include::internal::CefString, value: crate::include::CefDictionaryValue) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_dictionary {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),crate::include::CefDictionaryValue::to_cef_own(value),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,crate::include::CefDictionaryValue::to_cef_own(value),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -670,14 +679,14 @@ impl CefDictionaryValue {
   pub fn set_list(&mut self, key: &crate::include::internal::CefString, value: crate::include::CefListValue) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_list {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(key),crate::include::CefListValue::to_cef_own(value),),
+        Some(f) => f(self.raw.as_ptr(),key as *const _ as *const _,crate::include::CefListValue::to_cef_own(value),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
     }
   }
 }
-pub type CefListValue = crate::include::base::CefProxy<cef_sys::cef_list_value_t>;
+pub type CefListValue = crate::include::refcounting::CefProxy<cef_sys::cef_list_value_t>;
 #[allow(non_snake_case)]
 impl CefListValue {
   /// Creates a new object that is not owned by any other object.
@@ -851,13 +860,13 @@ impl CefListValue {
     }
   }
   /// Returns the value at the specified index as type string.
-  pub fn get_string(&mut self, index: u64) -> crate::include::internal::CefString {
+  pub fn get_string(&mut self, index: u64) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_string {
         Some(f) => f(self.raw.as_ptr(),index,),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the value at the specified index as type binary. The returned
@@ -959,7 +968,7 @@ impl CefListValue {
   pub fn set_string(&mut self, index: u64, value: Option<&crate::include::internal::CefString>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_string {
-        Some(f) => f(self.raw.as_ptr(),index,crate::include::internal::IntoCef::into_cef(value),),
+        Some(f) => f(self.raw.as_ptr(),index,match value { Some(value) => value as *const _ as *const _, None => std::ptr::null_mut() },),
         None => panic!(),
       };
       if ret == 0 { false } else { true }

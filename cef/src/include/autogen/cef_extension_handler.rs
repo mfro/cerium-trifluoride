@@ -1,4 +1,4 @@
-pub type CefGetExtensionResourceCallback = crate::include::base::CefProxy<cef_sys::cef_get_extension_resource_callback_t>;
+pub type CefGetExtensionResourceCallback = crate::include::refcounting::CefProxy<cef_sys::cef_get_extension_resource_callback_t>;
 #[allow(non_snake_case)]
 impl CefGetExtensionResourceCallback {
   /// Continue the request. Read the resource contents from |stream|.
@@ -107,14 +107,14 @@ unsafe extern "C" fn cef_extension_handler_t_on_extension_unloaded(_self: *mut c
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_extension_handler_t_on_before_background_browser(_self: *mut cef_sys::cef_extension_handler_t, extension: *mut cef_sys::cef_extension_t, url: *const cef_sys::cef_string_t, client: *mut *mut cef_sys::cef_client_t, settings: *mut cef_sys::cef_browser_settings_t) -> i32 {
   let mut client__tmp = crate::include::CefClient::from_cef_own(*client).unwrap();
-  let ret = CefExtensionHandler::from_cef(_self, true).get().on_before_background_browser(crate::include::CefExtension::from_cef_own(extension).unwrap(),&crate::include::internal::CefString::from_cef(url).unwrap(),&mut client__tmp,&mut *(settings as *mut _),);
+  let ret = CefExtensionHandler::from_cef(_self, true).get().on_before_background_browser(crate::include::CefExtension::from_cef_own(extension).unwrap(),&*(url as *const _),&mut client__tmp,&mut *(settings as *mut _),);
   *client = crate::include::CefClient::to_cef_own(client__tmp);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_extension_handler_t_on_before_browser(_self: *mut cef_sys::cef_extension_handler_t, extension: *mut cef_sys::cef_extension_t, browser: *mut cef_sys::cef_browser_t, active_browser: *mut cef_sys::cef_browser_t, index: i32, url: *const cef_sys::cef_string_t, active: i32, windowInfo: *mut cef_sys::cef_window_info_t, client: *mut *mut cef_sys::cef_client_t, settings: *mut cef_sys::cef_browser_settings_t) -> i32 {
   let mut client__tmp = crate::include::CefClient::from_cef_own(*client).unwrap();
-  let ret = CefExtensionHandler::from_cef(_self, true).get().on_before_browser(crate::include::CefExtension::from_cef_own(extension).unwrap(),crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefBrowser::from_cef_own(active_browser).unwrap(),index,&crate::include::internal::CefString::from_cef(url).unwrap(),if active == 0 { false } else { true },&mut *(windowInfo as *mut _),&mut client__tmp,&mut *(settings as *mut _),);
+  let ret = CefExtensionHandler::from_cef(_self, true).get().on_before_browser(crate::include::CefExtension::from_cef_own(extension).unwrap(),crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefBrowser::from_cef_own(active_browser).unwrap(),index,&*(url as *const _),if active == 0 { false } else { true },&mut *(windowInfo as *mut _),&mut client__tmp,&mut *(settings as *mut _),);
   *client = crate::include::CefClient::to_cef_own(client__tmp);
   if ret { 1 } else { 0 }
 }
@@ -130,6 +130,6 @@ unsafe extern "C" fn cef_extension_handler_t_can_access_browser(_self: *mut cef_
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_extension_handler_t_get_extension_resource(_self: *mut cef_sys::cef_extension_handler_t, extension: *mut cef_sys::cef_extension_t, browser: *mut cef_sys::cef_browser_t, file: *const cef_sys::cef_string_t, callback: *mut cef_sys::cef_get_extension_resource_callback_t) -> i32 {
-  let ret = CefExtensionHandler::from_cef(_self, true).get().get_extension_resource(crate::include::CefExtension::from_cef_own(extension).unwrap(),crate::include::CefBrowser::from_cef_own(browser).unwrap(),&crate::include::internal::CefString::from_cef(file).unwrap(),crate::include::CefGetExtensionResourceCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefExtensionHandler::from_cef(_self, true).get().get_extension_resource(crate::include::CefExtension::from_cef_own(extension).unwrap(),crate::include::CefBrowser::from_cef_own(browser).unwrap(),&*(file as *const _),crate::include::CefGetExtensionResourceCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }

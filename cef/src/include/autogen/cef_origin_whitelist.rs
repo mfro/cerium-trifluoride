@@ -35,7 +35,7 @@
 #[allow(non_snake_case)]
 pub fn cef_add_cross_origin_whitelist_entry(source_origin: &crate::include::internal::CefString, target_protocol: &crate::include::internal::CefString, target_domain: Option<&crate::include::internal::CefString>, allow_target_subdomains: bool, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_add_cross_origin_whitelist_entry(crate::include::internal::IntoCef::into_cef(source_origin),crate::include::internal::IntoCef::into_cef(target_protocol),crate::include::internal::IntoCef::into_cef(target_domain),if allow_target_subdomains { 1 } else { 0 },);
+    let ret = cef_sys::cef_add_cross_origin_whitelist_entry(source_origin as *const _ as *const _,target_protocol as *const _ as *const _,match target_domain { Some(target_domain) => target_domain as *const _ as *const _, None => std::ptr::null_mut() },if allow_target_subdomains { 1 } else { 0 },);
     if ret == 0 { false } else { true }
   }
 }
@@ -44,7 +44,7 @@ pub fn cef_add_cross_origin_whitelist_entry(source_origin: &crate::include::inte
 #[allow(non_snake_case)]
 pub fn cef_remove_cross_origin_whitelist_entry(source_origin: &crate::include::internal::CefString, target_protocol: &crate::include::internal::CefString, target_domain: Option<&crate::include::internal::CefString>, allow_target_subdomains: bool, ) -> bool {
   unsafe {
-    let ret = cef_sys::cef_remove_cross_origin_whitelist_entry(crate::include::internal::IntoCef::into_cef(source_origin),crate::include::internal::IntoCef::into_cef(target_protocol),crate::include::internal::IntoCef::into_cef(target_domain),if allow_target_subdomains { 1 } else { 0 },);
+    let ret = cef_sys::cef_remove_cross_origin_whitelist_entry(source_origin as *const _ as *const _,target_protocol as *const _ as *const _,match target_domain { Some(target_domain) => target_domain as *const _ as *const _, None => std::ptr::null_mut() },if allow_target_subdomains { 1 } else { 0 },);
     if ret == 0 { false } else { true }
   }
 }

@@ -31,6 +31,12 @@ impl From<CefLogSeverity> for cef_sys::cef_log_severity_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefLogSeverity {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Represents the state of a setting.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -51,6 +57,12 @@ impl From<cef_sys::cef_state_t> for CefState {
 impl From<CefState> for cef_sys::cef_state_t {
   fn from(src: CefState) -> cef_sys::cef_state_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefState {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Initialization settings. Specify NULL or 0 to get the recommended default
@@ -97,7 +109,7 @@ impl CefSettings {
   /// in the top-level app bundle. See the comments on CefExecuteProcess() for
   /// details. If this value is non-empty then it must be an absolute path. Also
   /// configurable using the "browser-subprocess-path" command-line switch.
-  pub fn browser_subprocess_path(&self) -> String { super::super::cef_string_to_string(&self.raw.browser_subprocess_path) }
+  pub fn browser_subprocess_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.browser_subprocess_path) }
   /// The path to a separate executable that will be launched for sub-processes.
   /// If this value is empty on Windows or Linux then the main process executable
   /// will be used. If this value is empty on macOS then a helper executable must
@@ -105,29 +117,29 @@ impl CefSettings {
   /// in the top-level app bundle. See the comments on CefExecuteProcess() for
   /// details. If this value is non-empty then it must be an absolute path. Also
   /// configurable using the "browser-subprocess-path" command-line switch.
-  pub fn set_browser_subprocess_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.browser_subprocess_path, v); self }
+  pub fn set_browser_subprocess_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.browser_subprocess_path, v); self }
   /// The path to the CEF framework directory on macOS. If this value is empty
   /// then the framework must exist at "Contents/Frameworks/Chromium Embedded
   /// Framework.framework" in the top-level app bundle. If this value is
   /// non-empty then it must be an absolute path. Also configurable using the
   /// "framework-dir-path" command-line switch.
-  pub fn framework_dir_path(&self) -> String { super::super::cef_string_to_string(&self.raw.framework_dir_path) }
+  pub fn framework_dir_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.framework_dir_path) }
   /// The path to the CEF framework directory on macOS. If this value is empty
   /// then the framework must exist at "Contents/Frameworks/Chromium Embedded
   /// Framework.framework" in the top-level app bundle. If this value is
   /// non-empty then it must be an absolute path. Also configurable using the
   /// "framework-dir-path" command-line switch.
-  pub fn set_framework_dir_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.framework_dir_path, v); self }
+  pub fn set_framework_dir_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.framework_dir_path, v); self }
   /// The path to the main bundle on macOS. If this value is empty then it
   /// defaults to the top-level app bundle. If this value is non-empty then it
   /// must be an absolute path. Also configurable using the "main-bundle-path"
   /// command-line switch.
-  pub fn main_bundle_path(&self) -> String { super::super::cef_string_to_string(&self.raw.main_bundle_path) }
+  pub fn main_bundle_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.main_bundle_path) }
   /// The path to the main bundle on macOS. If this value is empty then it
   /// defaults to the top-level app bundle. If this value is non-empty then it
   /// must be an absolute path. Also configurable using the "main-bundle-path"
   /// command-line switch.
-  pub fn set_main_bundle_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.main_bundle_path, v); self }
+  pub fn set_main_bundle_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.main_bundle_path, v); self }
   /// Set to true (1) to enable use of the Chrome runtime in CEF. This feature is
   /// considered experimental and is not recommended for most users at this time.
   /// See issue #2969 for details.
@@ -190,7 +202,7 @@ impl CefSettings {
   /// HTML5 databases such as localStorage will only persist across sessions if a
   /// cache path is specified. Can be overridden for individual CefRequestContext
   /// instances via the CefRequestContextSettings.cache_path value.
-  pub fn cache_path(&self) -> String { super::super::cef_string_to_string(&self.raw.cache_path) }
+  pub fn cache_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.cache_path) }
   /// The location where data for the global browser cache will be stored on
   /// disk. If this value is non-empty then it must be an absolute path that is
   /// either equal to or a child directory of CefSettings.root_cache_path. If
@@ -199,7 +211,7 @@ impl CefSettings {
   /// HTML5 databases such as localStorage will only persist across sessions if a
   /// cache path is specified. Can be overridden for individual CefRequestContext
   /// instances via the CefRequestContextSettings.cache_path value.
-  pub fn set_cache_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.cache_path, v); self }
+  pub fn set_cache_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.cache_path, v); self }
   /// The root directory that all CefSettings.cache_path and
   /// CefRequestContextSettings.cache_path values must have in common. If this
   /// value is empty and CefSettings.cache_path is non-empty then it will
@@ -207,7 +219,7 @@ impl CefSettings {
   /// then it must be an absolute path. Failure to set this value correctly may
   /// result in the sandbox blocking read/write access to the cache_path
   /// directory.
-  pub fn root_cache_path(&self) -> String { super::super::cef_string_to_string(&self.raw.root_cache_path) }
+  pub fn root_cache_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.root_cache_path) }
   /// The root directory that all CefSettings.cache_path and
   /// CefRequestContextSettings.cache_path values must have in common. If this
   /// value is empty and CefSettings.cache_path is non-empty then it will
@@ -215,7 +227,7 @@ impl CefSettings {
   /// then it must be an absolute path. Failure to set this value correctly may
   /// result in the sandbox blocking read/write access to the cache_path
   /// directory.
-  pub fn set_root_cache_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.root_cache_path, v); self }
+  pub fn set_root_cache_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.root_cache_path, v); self }
   /// The location where user data such as spell checking dictionary files will
   /// be stored on disk. If this value is empty then the default
   /// platform-specific user data directory will be used ("~/.cef_user_data"
@@ -223,7 +235,7 @@ impl CefSettings {
   /// on Mac OS X, "Local Settings\Application Data\CEF\User Data" directory
   /// under the user profile directory on Windows). If this value is non-empty
   /// then it must be an absolute path.
-  pub fn user_data_path(&self) -> String { super::super::cef_string_to_string(&self.raw.user_data_path) }
+  pub fn user_data_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.user_data_path) }
   /// The location where user data such as spell checking dictionary files will
   /// be stored on disk. If this value is empty then the default
   /// platform-specific user data directory will be used ("~/.cef_user_data"
@@ -231,7 +243,7 @@ impl CefSettings {
   /// on Mac OS X, "Local Settings\Application Data\CEF\User Data" directory
   /// under the user profile directory on Windows). If this value is non-empty
   /// then it must be an absolute path.
-  pub fn set_user_data_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.user_data_path, v); self }
+  pub fn set_user_data_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.user_data_path, v); self }
   /// To persist session cookies (cookies without an expiry date or validity
   /// interval) by default when using the global cookie manager set this value to
   /// true (1). Session cookies are generally intended to be transient and most
@@ -267,47 +279,47 @@ impl CefSettings {
   /// Value that will be returned as the User-Agent HTTP header. If empty the
   /// default User-Agent string will be used. Also configurable using the
   /// "user-agent" command-line switch.
-  pub fn user_agent(&self) -> String { super::super::cef_string_to_string(&self.raw.user_agent) }
+  pub fn user_agent(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.user_agent) }
   /// Value that will be returned as the User-Agent HTTP header. If empty the
   /// default User-Agent string will be used. Also configurable using the
   /// "user-agent" command-line switch.
-  pub fn set_user_agent(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.user_agent, v); self }
+  pub fn set_user_agent(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.user_agent, v); self }
   /// Value that will be inserted as the product portion of the default
   /// User-Agent string. If empty the Chromium product version will be used. If
   /// |userAgent| is specified this value will be ignored. Also configurable
   /// using the "product-version" command-line switch.
-  pub fn product_version(&self) -> String { super::super::cef_string_to_string(&self.raw.product_version) }
+  pub fn product_version(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.product_version) }
   /// Value that will be inserted as the product portion of the default
   /// User-Agent string. If empty the Chromium product version will be used. If
   /// |userAgent| is specified this value will be ignored. Also configurable
   /// using the "product-version" command-line switch.
-  pub fn set_product_version(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.product_version, v); self }
+  pub fn set_product_version(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.product_version, v); self }
   /// The locale string that will be passed to WebKit. If empty the default
   /// locale of "en-US" will be used. This value is ignored on Linux where locale
   /// is determined using environment variable parsing with the precedence order:
   /// LANGUAGE, LC_ALL, LC_MESSAGES and LANG. Also configurable using the "lang"
   /// command-line switch.
-  pub fn locale(&self) -> String { super::super::cef_string_to_string(&self.raw.locale) }
+  pub fn locale(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.locale) }
   /// The locale string that will be passed to WebKit. If empty the default
   /// locale of "en-US" will be used. This value is ignored on Linux where locale
   /// is determined using environment variable parsing with the precedence order:
   /// LANGUAGE, LC_ALL, LC_MESSAGES and LANG. Also configurable using the "lang"
   /// command-line switch.
-  pub fn set_locale(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.locale, v); self }
+  pub fn set_locale(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.locale, v); self }
   /// The directory and file name to use for the debug log. If empty a default
   /// log file name and location will be used. On Windows and Linux a "debug.log"
   /// file will be written in the main executable directory. On Mac OS X a
   /// "~/Library/Logs/<app name>_debug.log" file will be written where <app name>
   /// is the name of the main app executable. Also configurable using the
   /// "log-file" command-line switch.
-  pub fn log_file(&self) -> String { super::super::cef_string_to_string(&self.raw.log_file) }
+  pub fn log_file(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.log_file) }
   /// The directory and file name to use for the debug log. If empty a default
   /// log file name and location will be used. On Windows and Linux a "debug.log"
   /// file will be written in the main executable directory. On Mac OS X a
   /// "~/Library/Logs/<app name>_debug.log" file will be written where <app name>
   /// is the name of the main app executable. Also configurable using the
   /// "log-file" command-line switch.
-  pub fn set_log_file(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.log_file, v); self }
+  pub fn set_log_file(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.log_file, v); self }
   /// The log severity. Only messages of this severity level or higher will be
   /// logged. When set to DISABLE no messages will be written to the log file,
   /// but FATAL messages will still be output to stderr. Also configurable using
@@ -323,37 +335,37 @@ impl CefSettings {
   /// Custom flags that will be used when initializing the V8 JavaScript engine.
   /// The consequences of using custom flags may not be well tested. Also
   /// configurable using the "js-flags" command-line switch.
-  pub fn javascript_flags(&self) -> String { super::super::cef_string_to_string(&self.raw.javascript_flags) }
+  pub fn javascript_flags(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.javascript_flags) }
   /// Custom flags that will be used when initializing the V8 JavaScript engine.
   /// The consequences of using custom flags may not be well tested. Also
   /// configurable using the "js-flags" command-line switch.
-  pub fn set_javascript_flags(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.javascript_flags, v); self }
+  pub fn set_javascript_flags(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.javascript_flags, v); self }
   /// The fully qualified path for the resources directory. If this value is
   /// empty the cef.pak and/or devtools_resources.pak files must be located in
   /// the module directory on Windows/Linux or the app bundle Resources directory
   /// on Mac OS X. If this value is non-empty then it must be an absolute path.
   /// Also configurable using the "resources-dir-path" command-line switch.
-  pub fn resources_dir_path(&self) -> String { super::super::cef_string_to_string(&self.raw.resources_dir_path) }
+  pub fn resources_dir_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.resources_dir_path) }
   /// The fully qualified path for the resources directory. If this value is
   /// empty the cef.pak and/or devtools_resources.pak files must be located in
   /// the module directory on Windows/Linux or the app bundle Resources directory
   /// on Mac OS X. If this value is non-empty then it must be an absolute path.
   /// Also configurable using the "resources-dir-path" command-line switch.
-  pub fn set_resources_dir_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.resources_dir_path, v); self }
+  pub fn set_resources_dir_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.resources_dir_path, v); self }
   /// The fully qualified path for the locales directory. If this value is empty
   /// the locales directory must be located in the module directory. If this
   /// value is non-empty then it must be an absolute path. This value is ignored
   /// on Mac OS X where pack files are always loaded from the app bundle
   /// Resources directory. Also configurable using the "locales-dir-path"
   /// command-line switch.
-  pub fn locales_dir_path(&self) -> String { super::super::cef_string_to_string(&self.raw.locales_dir_path) }
+  pub fn locales_dir_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.locales_dir_path) }
   /// The fully qualified path for the locales directory. If this value is empty
   /// the locales directory must be located in the module directory. If this
   /// value is non-empty then it must be an absolute path. This value is ignored
   /// on Mac OS X where pack files are always loaded from the app bundle
   /// Resources directory. Also configurable using the "locales-dir-path"
   /// command-line switch.
-  pub fn set_locales_dir_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.locales_dir_path, v); self }
+  pub fn set_locales_dir_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.locales_dir_path, v); self }
   /// Set to true (1) to disable loading of pack files for resources and locales.
   /// A resource bundle handler must be provided for the browser and render
   /// processes via CefApp::GetResourceBundleHandler() if loading of pack files
@@ -430,24 +442,24 @@ impl CefSettings {
   /// If both values are empty then "en-US,en" will be used. Can be overridden
   /// for individual CefRequestContext instances via the
   /// CefRequestContextSettings.accept_language_list value.
-  pub fn accept_language_list(&self) -> String { super::super::cef_string_to_string(&self.raw.accept_language_list) }
+  pub fn accept_language_list(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.accept_language_list) }
   /// Comma delimited ordered list of language codes without any whitespace that
   /// will be used in the "Accept-Language" HTTP header. May be overridden on a
   /// per-browser basis using the CefBrowserSettings.accept_language_list value.
   /// If both values are empty then "en-US,en" will be used. Can be overridden
   /// for individual CefRequestContext instances via the
   /// CefRequestContextSettings.accept_language_list value.
-  pub fn set_accept_language_list(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.accept_language_list, v); self }
+  pub fn set_accept_language_list(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.accept_language_list, v); self }
   /// GUID string used for identifying the application. This is passed to the
   /// system AV function for scanning downloaded files. By default, the GUID
   /// will be an empty string and the file will be treated as an untrusted
   /// file when the GUID is empty.
-  pub fn application_client_id_for_file_scanning(&self) -> String { super::super::cef_string_to_string(&self.raw.application_client_id_for_file_scanning) }
+  pub fn application_client_id_for_file_scanning(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.application_client_id_for_file_scanning) }
   /// GUID string used for identifying the application. This is passed to the
   /// system AV function for scanning downloaded files. By default, the GUID
   /// will be an empty string and the file will be treated as an untrusted
   /// file when the GUID is empty.
-  pub fn set_application_client_id_for_file_scanning(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.application_client_id_for_file_scanning, v); self }
+  pub fn set_application_client_id_for_file_scanning(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.application_client_id_for_file_scanning, v); self }
   pub fn build(&self) -> Self { Self { raw: self.raw } }
 }
 /// Request context initialization settings. Specify NULL or 0 to get the
@@ -486,7 +498,7 @@ impl CefRequestContextSettings {
   /// HTML5 databases such as localStorage will only persist across sessions if a
   /// cache path is specified. To share the global browser cache and related
   /// configuration set this value to match the CefSettings.cache_path value.
-  pub fn cache_path(&self) -> String { super::super::cef_string_to_string(&self.raw.cache_path) }
+  pub fn cache_path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.cache_path) }
   /// The location where cache data for this request context will be stored on
   /// disk. If this value is non-empty then it must be an absolute path that is
   /// either equal to or a child directory of CefSettings.root_cache_path. If
@@ -495,7 +507,7 @@ impl CefRequestContextSettings {
   /// HTML5 databases such as localStorage will only persist across sessions if a
   /// cache path is specified. To share the global browser cache and related
   /// configuration set this value to match the CefSettings.cache_path value.
-  pub fn set_cache_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.cache_path, v); self }
+  pub fn set_cache_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.cache_path, v); self }
   /// To persist session cookies (cookies without an expiry date or validity
   /// interval) by default when using the global cookie manager set this value to
   /// true (1). Session cookies are generally intended to be transient and most
@@ -540,14 +552,14 @@ impl CefRequestContextSettings {
   /// browser basis using the CefBrowserSettings.accept_language_list value. If
   /// all values are empty then "en-US,en" will be used. This value will be
   /// ignored if |cache_path| matches the CefSettings.cache_path value.
-  pub fn accept_language_list(&self) -> String { super::super::cef_string_to_string(&self.raw.accept_language_list) }
+  pub fn accept_language_list(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.accept_language_list) }
   /// Comma delimited ordered list of language codes without any whitespace that
   /// will be used in the "Accept-Language" HTTP header. Can be set globally
   /// using the CefSettings.accept_language_list value or overridden on a per-
   /// browser basis using the CefBrowserSettings.accept_language_list value. If
   /// all values are empty then "en-US,en" will be used. This value will be
   /// ignored if |cache_path| matches the CefSettings.cache_path value.
-  pub fn set_accept_language_list(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.accept_language_list, v); self }
+  pub fn set_accept_language_list(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.accept_language_list, v); self }
   pub fn build(&self) -> Self { Self { raw: self.raw } }
 }
 /// Browser initialization settings. Specify NULL or 0 to get the recommended
@@ -593,19 +605,19 @@ impl CefBrowserSettings {
   /// changed dynamically via CefBrowserHost::SetWindowlessFrameRate.
   pub fn set_windowless_frame_rate(&mut self, v: i32) -> &mut Self { self.raw.windowless_frame_rate = v; self }
   /// Font settings.
-  pub fn standard_font_family(&self) -> String { super::super::cef_string_to_string(&self.raw.standard_font_family) }
+  pub fn standard_font_family(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.standard_font_family) }
   /// Font settings.
-  pub fn set_standard_font_family(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.standard_font_family, v); self }
-  pub fn fixed_font_family(&self) -> String { super::super::cef_string_to_string(&self.raw.fixed_font_family) }
-  pub fn set_fixed_font_family(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.fixed_font_family, v); self }
-  pub fn serif_font_family(&self) -> String { super::super::cef_string_to_string(&self.raw.serif_font_family) }
-  pub fn set_serif_font_family(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.serif_font_family, v); self }
-  pub fn sans_serif_font_family(&self) -> String { super::super::cef_string_to_string(&self.raw.sans_serif_font_family) }
-  pub fn set_sans_serif_font_family(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.sans_serif_font_family, v); self }
-  pub fn cursive_font_family(&self) -> String { super::super::cef_string_to_string(&self.raw.cursive_font_family) }
-  pub fn set_cursive_font_family(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.cursive_font_family, v); self }
-  pub fn fantasy_font_family(&self) -> String { super::super::cef_string_to_string(&self.raw.fantasy_font_family) }
-  pub fn set_fantasy_font_family(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.fantasy_font_family, v); self }
+  pub fn set_standard_font_family(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.standard_font_family, v); self }
+  pub fn fixed_font_family(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.fixed_font_family) }
+  pub fn set_fixed_font_family(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.fixed_font_family, v); self }
+  pub fn serif_font_family(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.serif_font_family) }
+  pub fn set_serif_font_family(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.serif_font_family, v); self }
+  pub fn sans_serif_font_family(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.sans_serif_font_family) }
+  pub fn set_sans_serif_font_family(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.sans_serif_font_family, v); self }
+  pub fn cursive_font_family(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.cursive_font_family) }
+  pub fn set_cursive_font_family(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.cursive_font_family, v); self }
+  pub fn fantasy_font_family(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.fantasy_font_family) }
+  pub fn set_fantasy_font_family(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.fantasy_font_family, v); self }
   pub fn default_font_size(&self) -> i32 { self.raw.default_font_size }
   pub fn set_default_font_size(&mut self, v: i32) -> &mut Self { self.raw.default_font_size = v; self }
   pub fn default_fixed_font_size(&self) -> i32 { self.raw.default_fixed_font_size }
@@ -616,10 +628,10 @@ impl CefBrowserSettings {
   pub fn set_minimum_logical_font_size(&mut self, v: i32) -> &mut Self { self.raw.minimum_logical_font_size = v; self }
   /// Default encoding for Web content. If empty "ISO-8859-1" will be used. Also
   /// configurable using the "default-encoding" command-line switch.
-  pub fn default_encoding(&self) -> String { super::super::cef_string_to_string(&self.raw.default_encoding) }
+  pub fn default_encoding(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.default_encoding) }
   /// Default encoding for Web content. If empty "ISO-8859-1" will be used. Also
   /// configurable using the "default-encoding" command-line switch.
-  pub fn set_default_encoding(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.default_encoding, v); self }
+  pub fn set_default_encoding(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.default_encoding, v); self }
   /// Controls the loading of fonts from remote sources. Also configurable using
   /// the "disable-remote-fonts" command-line switch.
   pub fn remote_fonts(&self) -> &crate::include::internal::CefState { unsafe { &*(self as *const _ as *const _) } }
@@ -764,12 +776,12 @@ impl CefBrowserSettings {
   /// will be used in the "Accept-Language" HTTP header. May be set globally
   /// using the CefBrowserSettings.accept_language_list value. If both values are
   /// empty then "en-US,en" will be used.
-  pub fn accept_language_list(&self) -> String { super::super::cef_string_to_string(&self.raw.accept_language_list) }
+  pub fn accept_language_list(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.accept_language_list) }
   /// Comma delimited ordered list of language codes without any whitespace that
   /// will be used in the "Accept-Language" HTTP header. May be set globally
   /// using the CefBrowserSettings.accept_language_list value. If both values are
   /// empty then "en-US,en" will be used.
-  pub fn set_accept_language_list(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.accept_language_list, v); self }
+  pub fn set_accept_language_list(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.accept_language_list, v); self }
   pub fn build(&self) -> Self { Self { raw: self.raw } }
 }
 /// Return value types.
@@ -792,6 +804,12 @@ impl From<cef_sys::cef_return_value_t> for CefReturnValue {
 impl From<CefReturnValue> for cef_sys::cef_return_value_t {
   fn from(src: CefReturnValue) -> cef_sys::cef_return_value_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefReturnValue {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// URL component parts.
@@ -818,53 +836,53 @@ impl From<cef_sys::cef_urlparts_t> for CefUrlparts {
 #[allow(non_snake_case)]
 impl CefUrlparts {
   /// The complete URL specification.
-  pub fn spec(&self) -> String { super::super::cef_string_to_string(&self.raw.spec) }
+  pub fn spec(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.spec) }
   /// The complete URL specification.
-  pub fn set_spec(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.spec, v); self }
+  pub fn set_spec(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.spec, v); self }
   /// Scheme component not including the colon (e.g., "http").
-  pub fn scheme(&self) -> String { super::super::cef_string_to_string(&self.raw.scheme) }
+  pub fn scheme(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.scheme) }
   /// Scheme component not including the colon (e.g., "http").
-  pub fn set_scheme(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.scheme, v); self }
+  pub fn set_scheme(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.scheme, v); self }
   /// User name component.
-  pub fn username(&self) -> String { super::super::cef_string_to_string(&self.raw.username) }
+  pub fn username(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.username) }
   /// User name component.
-  pub fn set_username(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.username, v); self }
+  pub fn set_username(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.username, v); self }
   /// Password component.
-  pub fn password(&self) -> String { super::super::cef_string_to_string(&self.raw.password) }
+  pub fn password(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.password) }
   /// Password component.
-  pub fn set_password(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.password, v); self }
+  pub fn set_password(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.password, v); self }
   /// Host component. This may be a hostname, an IPv4 address or an IPv6 literal
   /// surrounded by square brackets (e.g., "[2001:db8::1]").
-  pub fn host(&self) -> String { super::super::cef_string_to_string(&self.raw.host) }
+  pub fn host(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.host) }
   /// Host component. This may be a hostname, an IPv4 address or an IPv6 literal
   /// surrounded by square brackets (e.g., "[2001:db8::1]").
-  pub fn set_host(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.host, v); self }
+  pub fn set_host(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.host, v); self }
   /// Port number component.
-  pub fn port(&self) -> String { super::super::cef_string_to_string(&self.raw.port) }
+  pub fn port(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.port) }
   /// Port number component.
-  pub fn set_port(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.port, v); self }
+  pub fn set_port(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.port, v); self }
   /// Origin contains just the scheme, host, and port from a URL. Equivalent to
   /// clearing any username and password, replacing the path with a slash, and
   /// clearing everything after that. This value will be empty for non-standard
   /// URLs.
-  pub fn origin(&self) -> String { super::super::cef_string_to_string(&self.raw.origin) }
+  pub fn origin(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.origin) }
   /// Origin contains just the scheme, host, and port from a URL. Equivalent to
   /// clearing any username and password, replacing the path with a slash, and
   /// clearing everything after that. This value will be empty for non-standard
   /// URLs.
-  pub fn set_origin(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.origin, v); self }
+  pub fn set_origin(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.origin, v); self }
   /// Path component including the first slash following the host.
-  pub fn path(&self) -> String { super::super::cef_string_to_string(&self.raw.path) }
+  pub fn path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.path) }
   /// Path component including the first slash following the host.
-  pub fn set_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.path, v); self }
+  pub fn set_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.path, v); self }
   /// Query string component (i.e., everything following the '?').
-  pub fn query(&self) -> String { super::super::cef_string_to_string(&self.raw.query) }
+  pub fn query(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.query) }
   /// Query string component (i.e., everything following the '?').
-  pub fn set_query(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.query, v); self }
+  pub fn set_query(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.query, v); self }
   /// Fragment (hash) identifier component (i.e., the string following the '#').
-  pub fn fragment(&self) -> String { super::super::cef_string_to_string(&self.raw.fragment) }
+  pub fn fragment(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.fragment) }
   /// Fragment (hash) identifier component (i.e., the string following the '#').
-  pub fn set_fragment(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.fragment, v); self }
+  pub fn set_fragment(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.fragment, v); self }
   pub fn build(&self) -> Self { Self { raw: self.raw } }
 }
 /// Cookie priority values.
@@ -886,6 +904,12 @@ impl From<CefCookiePriority> for cef_sys::cef_cookie_priority_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefCookiePriority {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Cookie same site values.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -904,6 +928,12 @@ impl From<cef_sys::cef_cookie_same_site_t> for CefCookieSameSite {
 impl From<CefCookieSameSite> for cef_sys::cef_cookie_same_site_t {
   fn from(src: CefCookieSameSite) -> cef_sys::cef_cookie_same_site_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefCookieSameSite {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Cookie information.
@@ -930,27 +960,27 @@ impl From<cef_sys::cef_cookie_t> for CefCookie {
 #[allow(non_snake_case)]
 impl CefCookie {
   /// The cookie name.
-  pub fn name(&self) -> String { super::super::cef_string_to_string(&self.raw.name) }
+  pub fn name(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.name) }
   /// The cookie name.
-  pub fn set_name(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.name, v); self }
+  pub fn set_name(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.name, v); self }
   /// The cookie value.
-  pub fn value(&self) -> String { super::super::cef_string_to_string(&self.raw.value) }
+  pub fn value(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.value) }
   /// The cookie value.
-  pub fn set_value(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.value, v); self }
+  pub fn set_value(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.value, v); self }
   /// If |domain| is empty a host cookie will be created instead of a domain
   /// cookie. Domain cookies are stored with a leading "." and are visible to
   /// sub-domains whereas host cookies are not.
-  pub fn domain(&self) -> String { super::super::cef_string_to_string(&self.raw.domain) }
+  pub fn domain(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.domain) }
   /// If |domain| is empty a host cookie will be created instead of a domain
   /// cookie. Domain cookies are stored with a leading "." and are visible to
   /// sub-domains whereas host cookies are not.
-  pub fn set_domain(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.domain, v); self }
+  pub fn set_domain(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.domain, v); self }
   /// If |path| is non-empty only URLs at or below the path will get the cookie
   /// value.
-  pub fn path(&self) -> String { super::super::cef_string_to_string(&self.raw.path) }
+  pub fn path(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.path) }
   /// If |path| is non-empty only URLs at or below the path will get the cookie
   /// value.
-  pub fn set_path(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.path, v); self }
+  pub fn set_path(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.path, v); self }
   /// If |secure| is true the cookie will only be sent for HTTPS requests.
   pub fn secure(&self) -> i32 { self.raw.secure }
   /// If |secure| is true the cookie will only be sent for HTTPS requests.
@@ -1011,6 +1041,12 @@ impl From<CefTerminationStatus> for cef_sys::cef_termination_status_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefTerminationStatus {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Path key values.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1049,6 +1085,12 @@ impl From<CefPathKey> for cef_sys::cef_path_key_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefPathKey {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Storage types.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1067,6 +1109,12 @@ impl From<CefStorageType> for cef_sys::cef_storage_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefStorageType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Supported error code values.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1083,6 +1131,12 @@ impl From<cef_sys::cef_errorcode_t> for CefErrorcode {
 impl From<CefErrorcode> for cef_sys::cef_errorcode_t {
   fn from(src: CefErrorcode) -> cef_sys::cef_errorcode_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefErrorcode {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Supported certificate status code values. See net\cert\cert_status_flags.h
@@ -1126,6 +1180,12 @@ impl From<CefCertStatus> for cef_sys::cef_cert_status_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefCertStatus {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// The manner in which a link click should be opened. These constants match
 /// their equivalents in Chromium's window_open_disposition.h and should not be
 /// renumbered.
@@ -1154,6 +1214,12 @@ impl From<CefWindowOpenDisposition> for cef_sys::cef_window_open_disposition_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefWindowOpenDisposition {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// "Verb" of a drag-and-drop operation as negotiated between the source and
 /// destination. These constants match their equivalents in WebCore's
 /// DragActions.h and should not be renumbered.
@@ -1178,6 +1244,12 @@ impl From<cef_sys::cef_drag_operations_mask_t> for CefDragOperationsMask {
 impl From<CefDragOperationsMask> for cef_sys::cef_drag_operations_mask_t {
   fn from(src: CefDragOperationsMask) -> cef_sys::cef_drag_operations_mask_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefDragOperationsMask {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Input mode of a virtual keyboard. These constants match their equivalents
@@ -1208,6 +1280,12 @@ impl From<CefTextInputMode> for cef_sys::cef_text_input_mode_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefTextInputMode {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// V8 access control values.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1226,6 +1304,12 @@ impl From<cef_sys::cef_v8_accesscontrol_t> for CefV8Accesscontrol {
 impl From<CefV8Accesscontrol> for cef_sys::cef_v8_accesscontrol_t {
   fn from(src: CefV8Accesscontrol) -> cef_sys::cef_v8_accesscontrol_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefV8Accesscontrol {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// V8 property attribute values.
@@ -1252,6 +1336,12 @@ impl From<CefV8Propertyattribute> for cef_sys::cef_v8_propertyattribute_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefV8Propertyattribute {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Post data elements may represent either bytes or files.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1269,6 +1359,12 @@ impl From<cef_sys::cef_postdataelement_type_t> for CefPostdataelementType {
 impl From<CefPostdataelementType> for cef_sys::cef_postdataelement_type_t {
   fn from(src: CefPostdataelementType) -> cef_sys::cef_postdataelement_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefPostdataelementType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Resource type for a request.
@@ -1322,6 +1418,12 @@ impl From<cef_sys::cef_resource_type_t> for CefResourceType {
 impl From<CefResourceType> for cef_sys::cef_resource_type_t {
   fn from(src: CefResourceType) -> cef_sys::cef_resource_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefResourceType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Transition type for a request. Made up of one source value and 0 or more
@@ -1389,6 +1491,12 @@ impl From<CefTransitionType> for cef_sys::cef_transition_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefTransitionType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Flags used to customize the behavior of CefURLRequest.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1437,6 +1545,12 @@ impl From<CefUrlrequestFlags> for cef_sys::cef_urlrequest_flags_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefUrlrequestFlags {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Flags that represent CefURLRequest status.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1462,6 +1576,12 @@ impl From<cef_sys::cef_urlrequest_status_t> for CefUrlrequestStatus {
 impl From<CefUrlrequestStatus> for cef_sys::cef_urlrequest_status_t {
   fn from(src: CefUrlrequestStatus) -> cef_sys::cef_urlrequest_status_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefUrlrequestStatus {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Structure representing a point.
@@ -1670,6 +1790,12 @@ impl From<CefProcessId> for cef_sys::cef_process_id_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefProcessId {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Existing thread IDs.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1728,6 +1854,12 @@ impl From<CefThreadId> for cef_sys::cef_thread_id_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefThreadId {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Thread priority values listed in increasing order of importance.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1750,6 +1882,12 @@ impl From<cef_sys::cef_thread_priority_t> for CefThreadPriority {
 impl From<CefThreadPriority> for cef_sys::cef_thread_priority_t {
   fn from(src: CefThreadPriority) -> cef_sys::cef_thread_priority_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefThreadPriority {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Message loop types. Indicates the set of asynchronous events that a message
@@ -1775,6 +1913,12 @@ impl From<CefMessageLoopType> for cef_sys::cef_message_loop_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefMessageLoopType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Windows COM initialization mode. Specifies how COM will be initialized for a
 /// new thread.
 #[repr(C)]
@@ -1796,6 +1940,12 @@ impl From<cef_sys::cef_com_init_mode_t> for CefComInitMode {
 impl From<CefComInitMode> for cef_sys::cef_com_init_mode_t {
   fn from(src: CefComInitMode) -> cef_sys::cef_com_init_mode_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefComInitMode {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Supported value types.
@@ -1823,6 +1973,12 @@ impl From<CefValueType> for cef_sys::cef_value_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefValueType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Supported JavaScript dialog types.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -1840,6 +1996,12 @@ impl From<cef_sys::cef_jsdialog_type_t> for CefJsdialogType {
 impl From<CefJsdialogType> for cef_sys::cef_jsdialog_type_t {
   fn from(src: CefJsdialogType) -> cef_sys::cef_jsdialog_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefJsdialogType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Screen information used when window rendering is disabled. This structure is
@@ -1984,6 +2146,12 @@ impl From<CefMenuId> for cef_sys::cef_menu_id_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefMenuId {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Mouse button types.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2001,6 +2169,12 @@ impl From<cef_sys::cef_mouse_button_type_t> for CefMouseButtonType {
 impl From<CefMouseButtonType> for cef_sys::cef_mouse_button_type_t {
   fn from(src: CefMouseButtonType) -> cef_sys::cef_mouse_button_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefMouseButtonType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Structure representing mouse event information.
@@ -2062,6 +2236,12 @@ impl From<CefTouchEventType> for cef_sys::cef_touch_event_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefTouchEventType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// The device type that caused the event.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2081,6 +2261,12 @@ impl From<cef_sys::cef_pointer_type_t> for CefPointerType {
 impl From<CefPointerType> for cef_sys::cef_pointer_type_t {
   fn from(src: CefPointerType) -> cef_sys::cef_pointer_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefPointerType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Structure representing touch event information.
@@ -2180,6 +2366,12 @@ impl From<CefPaintElementType> for cef_sys::cef_paint_element_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefPaintElementType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Supported event bit flags.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2211,6 +2403,12 @@ impl From<CefEventFlags> for cef_sys::cef_event_flags_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefEventFlags {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Supported menu item types.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2231,6 +2429,12 @@ impl From<cef_sys::cef_menu_item_type_t> for CefMenuItemType {
 impl From<CefMenuItemType> for cef_sys::cef_menu_item_type_t {
   fn from(src: CefMenuItemType) -> cef_sys::cef_menu_item_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefMenuItemType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Supported context menu type flags.
@@ -2263,6 +2467,12 @@ impl From<CefContextMenuTypeFlags> for cef_sys::cef_context_menu_type_flags_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefContextMenuTypeFlags {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Supported context menu media types.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2289,6 +2499,12 @@ impl From<cef_sys::cef_context_menu_media_type_t> for CefContextMenuMediaType {
 impl From<CefContextMenuMediaType> for cef_sys::cef_context_menu_media_type_t {
   fn from(src: CefContextMenuMediaType) -> cef_sys::cef_context_menu_media_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefContextMenuMediaType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Supported context menu media state bit flags.
@@ -2318,6 +2534,12 @@ impl From<CefContextMenuMediaStateFlags> for cef_sys::cef_context_menu_media_sta
     src.0
   }
 }
+impl std::ops::BitOr for CefContextMenuMediaStateFlags {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Supported context menu edit state bit flags.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2341,6 +2563,12 @@ impl From<cef_sys::cef_context_menu_edit_state_flags_t> for CefContextMenuEditSt
 impl From<CefContextMenuEditStateFlags> for cef_sys::cef_context_menu_edit_state_flags_t {
   fn from(src: CefContextMenuEditStateFlags) -> cef_sys::cef_context_menu_edit_state_flags_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefContextMenuEditStateFlags {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Key event types.
@@ -2369,6 +2597,12 @@ impl From<cef_sys::cef_key_event_type_t> for CefKeyEventType {
 impl From<CefKeyEventType> for cef_sys::cef_key_event_type_t {
   fn from(src: CefKeyEventType) -> cef_sys::cef_key_event_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefKeyEventType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Structure representing keyboard event information.
@@ -2464,6 +2698,12 @@ impl From<CefFocusSource> for cef_sys::cef_focus_source_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefFocusSource {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Navigation types.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2484,6 +2724,12 @@ impl From<cef_sys::cef_navigation_type_t> for CefNavigationType {
 impl From<CefNavigationType> for cef_sys::cef_navigation_type_t {
   fn from(src: CefNavigationType) -> cef_sys::cef_navigation_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefNavigationType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Supported XML encoding types. The parser supports ASCII, ISO-8859-1, and
@@ -2508,6 +2754,12 @@ impl From<cef_sys::cef_xml_encoding_type_t> for CefXmlEncodingType {
 impl From<CefXmlEncodingType> for cef_sys::cef_xml_encoding_type_t {
   fn from(src: CefXmlEncodingType) -> cef_sys::cef_xml_encoding_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefXmlEncodingType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// XML node types.
@@ -2535,6 +2787,12 @@ impl From<cef_sys::cef_xml_node_type_t> for CefXmlNodeType {
 impl From<CefXmlNodeType> for cef_sys::cef_xml_node_type_t {
   fn from(src: CefXmlNodeType) -> cef_sys::cef_xml_node_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefXmlNodeType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Popup window features.
@@ -2606,6 +2864,12 @@ impl From<CefDomDocumentType> for cef_sys::cef_dom_document_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefDomDocumentType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// DOM event category flags.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2639,6 +2903,12 @@ impl From<CefDomEventCategory> for cef_sys::cef_dom_event_category_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefDomEventCategory {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// DOM event processing phases.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2657,6 +2927,12 @@ impl From<cef_sys::cef_dom_event_phase_t> for CefDomEventPhase {
 impl From<CefDomEventPhase> for cef_sys::cef_dom_event_phase_t {
   fn from(src: CefDomEventPhase) -> cef_sys::cef_dom_event_phase_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefDomEventPhase {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// DOM node types.
@@ -2683,6 +2959,12 @@ impl From<cef_sys::cef_dom_node_type_t> for CefDomNodeType {
 impl From<CefDomNodeType> for cef_sys::cef_dom_node_type_t {
   fn from(src: CefDomNodeType) -> cef_sys::cef_dom_node_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefDomNodeType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Supported file dialog modes.
@@ -2715,6 +2997,12 @@ impl From<cef_sys::cef_file_dialog_mode_t> for CefFileDialogMode {
 impl From<CefFileDialogMode> for cef_sys::cef_file_dialog_mode_t {
   fn from(src: CefFileDialogMode) -> cef_sys::cef_file_dialog_mode_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefFileDialogMode {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Print job color mode values.
@@ -2763,6 +3051,12 @@ impl From<CefColorModel> for cef_sys::cef_color_model_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefColorModel {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Print job duplex mode values.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2781,6 +3075,12 @@ impl From<cef_sys::cef_duplex_mode_t> for CefDuplexMode {
 impl From<CefDuplexMode> for cef_sys::cef_duplex_mode_t {
   fn from(src: CefDuplexMode) -> cef_sys::cef_duplex_mode_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefDuplexMode {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Cursor type values.
@@ -2847,6 +3147,12 @@ impl From<cef_sys::cef_cursor_type_t> for CefCursorType {
 impl From<CefCursorType> for cef_sys::cef_cursor_type_t {
   fn from(src: CefCursorType) -> cef_sys::cef_cursor_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefCursorType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Structure representing cursor information. |buffer| will be
@@ -2926,6 +3232,12 @@ impl From<CefUriUnescapeRule> for cef_sys::cef_uri_unescape_rule_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefUriUnescapeRule {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Options that can be passed to CefParseJSON.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -2945,6 +3257,12 @@ impl From<cef_sys::cef_json_parser_options_t> for CefJsonParserOptions {
 impl From<CefJsonParserOptions> for cef_sys::cef_json_parser_options_t {
   fn from(src: CefJsonParserOptions) -> cef_sys::cef_json_parser_options_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefJsonParserOptions {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Error codes that can be returned from CefParseJSONAndReturnError.
@@ -2971,6 +3289,12 @@ impl From<cef_sys::cef_json_parser_error_t> for CefJsonParserError {
 impl From<CefJsonParserError> for cef_sys::cef_json_parser_error_t {
   fn from(src: CefJsonParserError) -> cef_sys::cef_json_parser_error_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefJsonParserError {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Options that can be passed to CefWriteJSON.
@@ -3004,6 +3328,12 @@ impl From<CefJsonWriterOptions> for cef_sys::cef_json_writer_options_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefJsonWriterOptions {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Margin type for PDF printing.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3026,6 +3356,12 @@ impl From<cef_sys::cef_pdf_print_margin_type_t> for CefPdfPrintMarginType {
 impl From<CefPdfPrintMarginType> for cef_sys::cef_pdf_print_margin_type_t {
   fn from(src: CefPdfPrintMarginType) -> cef_sys::cef_pdf_print_margin_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefPdfPrintMarginType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Structure representing PDF print settings.
@@ -3053,16 +3389,16 @@ impl From<cef_sys::cef_pdf_print_settings_t> for CefPdfPrintSettings {
 impl CefPdfPrintSettings {
   /// Page title to display in the header. Only used if |header_footer_enabled|
   /// is set to true (1).
-  pub fn header_footer_title(&self) -> String { super::super::cef_string_to_string(&self.raw.header_footer_title) }
+  pub fn header_footer_title(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.header_footer_title) }
   /// Page title to display in the header. Only used if |header_footer_enabled|
   /// is set to true (1).
-  pub fn set_header_footer_title(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.header_footer_title, v); self }
+  pub fn set_header_footer_title(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.header_footer_title, v); self }
   /// URL to display in the footer. Only used if |header_footer_enabled| is set
   /// to true (1).
-  pub fn header_footer_url(&self) -> String { super::super::cef_string_to_string(&self.raw.header_footer_url) }
+  pub fn header_footer_url(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.header_footer_url) }
   /// URL to display in the footer. Only used if |header_footer_enabled| is set
   /// to true (1).
-  pub fn set_header_footer_url(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.header_footer_url, v); self }
+  pub fn set_header_footer_url(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.header_footer_url, v); self }
   /// Output page size in microns. If either of these values is less than or
   /// equal to zero then the default paper size (A4) will be used.
   pub fn page_width(&self) -> i32 { self.raw.page_width }
@@ -3145,6 +3481,12 @@ impl From<CefScaleFactor> for cef_sys::cef_scale_factor_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefScaleFactor {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Plugin policies supported by CefRequestContextHandler::OnBeforePluginLoad.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3168,6 +3510,12 @@ impl From<cef_sys::cef_plugin_policy_t> for CefPluginPolicy {
 impl From<CefPluginPolicy> for cef_sys::cef_plugin_policy_t {
   fn from(src: CefPluginPolicy) -> cef_sys::cef_plugin_policy_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefPluginPolicy {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Policy for how the Referrer HTTP header value will be sent during navigation.
@@ -3216,6 +3564,12 @@ impl From<CefReferrerPolicy> for cef_sys::cef_referrer_policy_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefReferrerPolicy {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Return values for CefResponseFilter::Filter().
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3240,6 +3594,12 @@ impl From<CefResponseFilterStatus> for cef_sys::cef_response_filter_status_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefResponseFilterStatus {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Describes how to interpret the components of a pixel.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3258,6 +3618,12 @@ impl From<cef_sys::cef_color_type_t> for CefColorType {
 impl From<CefColorType> for cef_sys::cef_color_type_t {
   fn from(src: CefColorType) -> cef_sys::cef_color_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefColorType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Describes how to interpret the alpha component of a pixel.
@@ -3282,6 +3648,12 @@ impl From<CefAlphaType> for cef_sys::cef_alpha_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefAlphaType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Text style types. Should be kepy in sync with gfx::TextStyle.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3301,6 +3673,12 @@ impl From<cef_sys::cef_text_style_t> for CefTextStyle {
 impl From<CefTextStyle> for cef_sys::cef_text_style_t {
   fn from(src: CefTextStyle) -> cef_sys::cef_text_style_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefTextStyle {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Specifies where along the main axis the CefBoxLayout child views should be
@@ -3326,6 +3704,12 @@ impl From<CefMainAxisAlignment> for cef_sys::cef_main_axis_alignment_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefMainAxisAlignment {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Specifies where along the cross axis the CefBoxLayout child views should be
 /// laid out.
 #[repr(C)]
@@ -3349,6 +3733,12 @@ impl From<cef_sys::cef_cross_axis_alignment_t> for CefCrossAxisAlignment {
 impl From<CefCrossAxisAlignment> for cef_sys::cef_cross_axis_alignment_t {
   fn from(src: CefCrossAxisAlignment) -> cef_sys::cef_cross_axis_alignment_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefCrossAxisAlignment {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Settings used when initializing a CefBoxLayout.
@@ -3446,6 +3836,12 @@ impl From<CefButtonState> for cef_sys::cef_button_state_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefButtonState {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Specifies the horizontal text alignment mode.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3468,6 +3864,12 @@ impl From<CefHorizontalAlignment> for cef_sys::cef_horizontal_alignment_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefHorizontalAlignment {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Specifies how a menu will be anchored for non-RTL languages. The opposite
 /// position will be used for RTL languages.
 #[repr(C)]
@@ -3486,6 +3888,12 @@ impl From<cef_sys::cef_menu_anchor_position_t> for CefMenuAnchorPosition {
 impl From<CefMenuAnchorPosition> for cef_sys::cef_menu_anchor_position_t {
   fn from(src: CefMenuAnchorPosition) -> cef_sys::cef_menu_anchor_position_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefMenuAnchorPosition {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Supported color types for menu items.
@@ -3509,6 +3917,12 @@ impl From<cef_sys::cef_menu_color_type_t> for CefMenuColorType {
 impl From<CefMenuColorType> for cef_sys::cef_menu_color_type_t {
   fn from(src: CefMenuColorType) -> cef_sys::cef_menu_color_type_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefMenuColorType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Supported SSL version values. See net/ssl/ssl_connection_status_flags.h
@@ -3537,6 +3951,12 @@ impl From<CefSslVersion> for cef_sys::cef_ssl_version_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefSslVersion {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Supported SSL content status flags. See content/public/common/ssl_status.h
 /// for more information.
 #[repr(C)]
@@ -3555,6 +3975,12 @@ impl From<cef_sys::cef_ssl_content_status_t> for CefSslContentStatus {
 impl From<CefSslContentStatus> for cef_sys::cef_ssl_content_status_t {
   fn from(src: CefSslContentStatus) -> cef_sys::cef_ssl_content_status_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefSslContentStatus {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// 
@@ -3632,6 +4058,12 @@ impl From<CefSchemeOptions> for cef_sys::cef_scheme_options_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefSchemeOptions {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Error codes for CDM registration. See cef_web_plugin.h for details.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3656,6 +4088,12 @@ impl From<CefCdmRegistrationError> for cef_sys::cef_cdm_registration_error_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefCdmRegistrationError {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Composition underline style.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3674,6 +4112,12 @@ impl From<cef_sys::cef_composition_underline_style_t> for CefCompositionUnderlin
 impl From<CefCompositionUnderlineStyle> for cef_sys::cef_composition_underline_style_t {
   fn from(src: CefCompositionUnderlineStyle) -> cef_sys::cef_composition_underline_style_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefCompositionUnderlineStyle {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Structure representing IME composition underline information. This is a thin
@@ -3812,6 +4256,12 @@ impl From<CefChannelLayout> for cef_sys::cef_channel_layout_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefChannelLayout {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Structure representing the audio parameters for setting up the audio handler.
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -3878,6 +4328,12 @@ impl From<CefMediaRouteCreateResult> for cef_sys::cef_media_route_create_result_
     src.0
   }
 }
+impl std::ops::BitOr for CefMediaRouteCreateResult {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Connection state for a MediaRoute object.
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -3897,6 +4353,12 @@ impl From<cef_sys::cef_media_route_connection_state_t> for CefMediaRouteConnecti
 impl From<CefMediaRouteConnectionState> for cef_sys::cef_media_route_connection_state_t {
   fn from(src: CefMediaRouteConnectionState) -> cef_sys::cef_media_route_connection_state_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefMediaRouteConnectionState {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }
 /// Icon types for a MediaSink object. Should be kept in sync with Chromium's
@@ -3925,6 +4387,12 @@ impl From<CefMediaSinkIconType> for cef_sys::cef_media_sink_icon_type_t {
     src.0
   }
 }
+impl std::ops::BitOr for CefMediaSinkIconType {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
+  }
+}
 /// Device information for a MediaSink object.
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -3948,12 +4416,12 @@ impl From<cef_sys::cef_media_sink_device_info_t> for CefMediaSinkDeviceInfo {
 }
 #[allow(non_snake_case)]
 impl CefMediaSinkDeviceInfo {
-  pub fn ip_address(&self) -> String { super::super::cef_string_to_string(&self.raw.ip_address) }
-  pub fn set_ip_address(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.ip_address, v); self }
+  pub fn ip_address(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.ip_address) }
+  pub fn set_ip_address(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.ip_address, v); self }
   pub fn port(&self) -> i32 { self.raw.port }
   pub fn set_port(&mut self, v: i32) -> &mut Self { self.raw.port = v; self }
-  pub fn model_name(&self) -> String { super::super::cef_string_to_string(&self.raw.model_name) }
-  pub fn set_model_name(&mut self, v: &str) -> &mut Self { super::super::str_to_cef_string(&mut self.raw.model_name, v); self }
+  pub fn model_name(&self) -> String { crate::include::helpers::cef_string_to_string(&self.raw.model_name) }
+  pub fn set_model_name(&mut self, v: &str) -> &mut Self { crate::include::helpers::str_to_cef_string(&mut self.raw.model_name, v); self }
   pub fn build(&self) -> Self { Self { raw: self.raw } }
 }
 /// Represents commands available to TextField.
@@ -3976,5 +4444,11 @@ impl From<cef_sys::cef_text_field_commands_t> for CefTextFieldCommands {
 impl From<CefTextFieldCommands> for cef_sys::cef_text_field_commands_t {
   fn from(src: CefTextFieldCommands) -> cef_sys::cef_text_field_commands_t {
     src.0
+  }
+}
+impl std::ops::BitOr for CefTextFieldCommands {
+  type Output = Self;
+  fn bitor(self, rhs: Self) -> Self::Output {
+    Self(self.0 | rhs.0)
   }
 }

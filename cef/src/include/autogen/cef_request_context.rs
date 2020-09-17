@@ -13,7 +13,7 @@ unsafe extern "C" fn cef_resolve_callback_t_on_resolve_completed(_self: *mut cef
   let ret = CefResolveCallback::from_cef(_self, true).get().on_resolve_completed(result.into(),&resolved_ips.into(),);
   ret
 }
-pub type CefRequestContext = crate::include::base::CefProxy<cef_sys::cef_request_context_t>;
+pub type CefRequestContext = crate::include::refcounting::CefProxy<cef_sys::cef_request_context_t>;
 #[allow(non_snake_case)]
 impl CefRequestContext {
   /// Returns the global context object.
@@ -87,13 +87,13 @@ impl CefRequestContext {
   }
   /// Returns the cache path for this object. If empty an "incognito mode"
   /// in-memory cache is being used.
-  pub fn get_cache_path(&mut self) -> crate::include::internal::CefString {
+  pub fn get_cache_path(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_cache_path {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the cookie manager for this object. If |callback| is non-NULL it
@@ -122,7 +122,7 @@ impl CefRequestContext {
   pub fn register_scheme_handler_factory(&mut self, scheme_name: &crate::include::internal::CefString, domain_name: Option<&crate::include::internal::CefString>, factory: Option<crate::include::CefSchemeHandlerFactory>) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().register_scheme_handler_factory {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(scheme_name),crate::include::internal::IntoCef::into_cef(domain_name),factory.map_or(std::ptr::null_mut(), |o| crate::include::CefSchemeHandlerFactory::to_cef_own(o)),),
+        Some(f) => f(self.raw.as_ptr(),scheme_name as *const _ as *const _,match domain_name { Some(domain_name) => domain_name as *const _ as *const _, None => std::ptr::null_mut() },factory.map_or(std::ptr::null_mut(), |o| crate::include::CefSchemeHandlerFactory::to_cef_own(o)),),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -157,7 +157,7 @@ impl CefRequestContext {
   pub fn has_preference(&mut self, name: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().has_preference {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -171,7 +171,7 @@ impl CefRequestContext {
   pub fn get_preference(&mut self, name: &crate::include::internal::CefString) -> Option<crate::include::CefValue> {
     unsafe {
       let ret = match self.raw.as_ref().get_preference {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefValue::from_cef_own(ret)
@@ -199,7 +199,7 @@ impl CefRequestContext {
   pub fn can_set_preference(&mut self, name: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().can_set_preference {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -213,7 +213,7 @@ impl CefRequestContext {
   pub fn set_preference(&mut self, name: &crate::include::internal::CefString, value: Option<crate::include::CefValue>, error: &mut crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().set_preference {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(name),value.map_or(std::ptr::null_mut(), |o| crate::include::CefValue::to_cef_own(o)),crate::include::internal::IntoCef::into_cef(error),),
+        Some(f) => f(self.raw.as_ptr(),name as *const _ as *const _,value.map_or(std::ptr::null_mut(), |o| crate::include::CefValue::to_cef_own(o)),error as *mut _ as *mut _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -264,7 +264,7 @@ impl CefRequestContext {
   pub fn resolve_host(&mut self, origin: &crate::include::internal::CefString, callback: crate::include::CefResolveCallback) -> () {
     unsafe {
       let ret = match self.raw.as_ref().resolve_host {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(origin),crate::include::CefResolveCallback::to_cef_own(callback),),
+        Some(f) => f(self.raw.as_ptr(),origin as *const _ as *const _,crate::include::CefResolveCallback::to_cef_own(callback),),
         None => panic!(),
       };
       ret
@@ -316,7 +316,7 @@ impl CefRequestContext {
   pub fn load_extension(&mut self, root_directory: &crate::include::internal::CefString, manifest: Option<crate::include::CefDictionaryValue>, handler: Option<crate::include::CefExtensionHandler>) -> () {
     unsafe {
       let ret = match self.raw.as_ref().load_extension {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(root_directory),manifest.map_or(std::ptr::null_mut(), |o| crate::include::CefDictionaryValue::to_cef_own(o)),handler.map_or(std::ptr::null_mut(), |o| crate::include::CefExtensionHandler::to_cef_own(o)),),
+        Some(f) => f(self.raw.as_ptr(),root_directory as *const _ as *const _,manifest.map_or(std::ptr::null_mut(), |o| crate::include::CefDictionaryValue::to_cef_own(o)),handler.map_or(std::ptr::null_mut(), |o| crate::include::CefExtensionHandler::to_cef_own(o)),),
         None => panic!(),
       };
       ret
@@ -329,7 +329,7 @@ impl CefRequestContext {
   pub fn did_load_extension(&mut self, extension_id: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().did_load_extension {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(extension_id),),
+        Some(f) => f(self.raw.as_ptr(),extension_id as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -342,7 +342,7 @@ impl CefRequestContext {
   pub fn has_extension(&mut self, extension_id: &crate::include::internal::CefString) -> bool {
     unsafe {
       let ret = match self.raw.as_ref().has_extension {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(extension_id),),
+        Some(f) => f(self.raw.as_ptr(),extension_id as *const _ as *const _,),
         None => panic!(),
       };
       if ret == 0 { false } else { true }
@@ -354,7 +354,7 @@ impl CefRequestContext {
   pub fn get_extension(&mut self, extension_id: &crate::include::internal::CefString) -> Option<crate::include::CefExtension> {
     unsafe {
       let ret = match self.raw.as_ref().get_extension {
-        Some(f) => f(self.raw.as_ptr(),crate::include::internal::IntoCef::into_cef(extension_id),),
+        Some(f) => f(self.raw.as_ptr(),extension_id as *const _ as *const _,),
         None => panic!(),
       };
       crate::include::CefExtension::from_cef_own(ret)

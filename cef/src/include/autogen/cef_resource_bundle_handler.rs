@@ -13,6 +13,6 @@ pub trait ResourceBundleHandler {
 define_refcounted!(ResourceBundleHandler, CefResourceBundleHandler, cef_resource_bundle_handler_t, get_localized_string: cef_resource_bundle_handler_t_get_localized_string,);
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_resource_bundle_handler_t_get_localized_string(_self: *mut cef_sys::cef_resource_bundle_handler_t, string_id: i32, string: *mut cef_sys::cef_string_t) -> i32 {
-  let ret = CefResourceBundleHandler::from_cef(_self, true).get().get_localized_string(string_id,&mut crate::include::internal::CefString::from_cef(string).unwrap(),);
+  let ret = CefResourceBundleHandler::from_cef(_self, true).get().get_localized_string(string_id,&mut *(string as *mut _),);
   if ret { 1 } else { 0 }
 }

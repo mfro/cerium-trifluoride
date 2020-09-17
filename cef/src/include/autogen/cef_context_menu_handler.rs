@@ -1,4 +1,4 @@
-pub type CefRunContextMenuCallback = crate::include::base::CefProxy<cef_sys::cef_run_context_menu_callback_t>;
+pub type CefRunContextMenuCallback = crate::include::refcounting::CefProxy<cef_sys::cef_run_context_menu_callback_t>;
 #[allow(non_snake_case)]
 impl CefRunContextMenuCallback {
   /// Complete context menu display by selecting the specified |command_id| and
@@ -74,7 +74,7 @@ unsafe extern "C" fn cef_context_menu_handler_t_on_context_menu_dismissed(_self:
   let ret = CefContextMenuHandler::from_cef(_self, true).get().on_context_menu_dismissed(crate::include::CefBrowser::from_cef_own(browser).unwrap(),crate::include::CefFrame::from_cef_own(frame).unwrap(),);
   ret
 }
-pub type CefContextMenuParams = crate::include::base::CefProxy<cef_sys::cef_context_menu_params_t>;
+pub type CefContextMenuParams = crate::include::refcounting::CefProxy<cef_sys::cef_context_menu_params_t>;
 #[allow(non_snake_case)]
 impl CefContextMenuParams {
   /// Returns the X coordinate of the mouse where the context menu was invoked.
@@ -112,35 +112,35 @@ impl CefContextMenuParams {
   }
   /// Returns the URL of the link, if any, that encloses the node that the
   /// context menu was invoked on.
-  pub fn get_link_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_link_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_link_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the link URL, if any, to be used ONLY for "copy link address". We
   /// don't validate this field in the frontend process.
-  pub fn get_unfiltered_link_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_unfiltered_link_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_unfiltered_link_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the source URL, if any, for the element that the context menu was
   /// invoked on. Example of elements with source URLs are img, audio, and video.
-  pub fn get_source_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_source_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_source_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns true if the context menu was invoked on an image which has
@@ -156,44 +156,44 @@ impl CefContextMenuParams {
   }
   /// Returns the title text or the alt text if the context menu was invoked on
   /// an image.
-  pub fn get_title_text(&mut self) -> crate::include::internal::CefString {
+  pub fn get_title_text(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_title_text {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the URL of the top level page that the context menu was invoked on.
-  pub fn get_page_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_page_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_page_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the URL of the subframe that the context menu was invoked on.
-  pub fn get_frame_url(&mut self) -> crate::include::internal::CefString {
+  pub fn get_frame_url(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_frame_url {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the character encoding of the subframe that the context menu was
   /// invoked on.
-  pub fn get_frame_charset(&mut self) -> crate::include::internal::CefString {
+  pub fn get_frame_charset(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_frame_charset {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the type of context node that the context menu was invoked on.
@@ -219,24 +219,24 @@ impl CefContextMenuParams {
   }
   /// Returns the text of the selection, if any, that the context menu was
   /// invoked on.
-  pub fn get_selection_text(&mut self) -> crate::include::internal::CefString {
+  pub fn get_selection_text(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_selection_text {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns the text of the misspelled word, if any, that the context menu was
   /// invoked on.
-  pub fn get_misspelled_word(&mut self) -> crate::include::internal::CefString {
+  pub fn get_misspelled_word(&mut self) -> crate::include::internal::CefStringUserFree {
     unsafe {
       let ret = match self.raw.as_ref().get_misspelled_word {
         Some(f) => f(self.raw.as_ptr(),),
         None => panic!(),
       };
-      crate::include::internal::CefString::userfree(ret)
+      crate::include::internal::CefStringUserFree::from_cef(ret).unwrap()
     }
   }
   /// Returns true if the context menu was invoked on an editable node.

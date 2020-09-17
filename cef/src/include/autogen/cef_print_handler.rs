@@ -1,4 +1,4 @@
-pub type CefPrintDialogCallback = crate::include::base::CefProxy<cef_sys::cef_print_dialog_callback_t>;
+pub type CefPrintDialogCallback = crate::include::refcounting::CefProxy<cef_sys::cef_print_dialog_callback_t>;
 #[allow(non_snake_case)]
 impl CefPrintDialogCallback {
   /// Continue printing with the specified |settings|.
@@ -22,7 +22,7 @@ impl CefPrintDialogCallback {
     }
   }
 }
-pub type CefPrintJobCallback = crate::include::base::CefProxy<cef_sys::cef_print_job_callback_t>;
+pub type CefPrintJobCallback = crate::include::refcounting::CefProxy<cef_sys::cef_print_job_callback_t>;
 #[allow(non_snake_case)]
 impl CefPrintJobCallback {
   /// Indicate completion of the print job.
@@ -83,7 +83,7 @@ unsafe extern "C" fn cef_print_handler_t_on_print_dialog(_self: *mut cef_sys::ce
 }
 #[allow(non_snake_case)]
 unsafe extern "C" fn cef_print_handler_t_on_print_job(_self: *mut cef_sys::cef_print_handler_t, browser: *mut cef_sys::cef_browser_t, document_name: *const cef_sys::cef_string_t, pdf_file_path: *const cef_sys::cef_string_t, callback: *mut cef_sys::cef_print_job_callback_t) -> i32 {
-  let ret = CefPrintHandler::from_cef(_self, true).get().on_print_job(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&crate::include::internal::CefString::from_cef(document_name).unwrap(),&crate::include::internal::CefString::from_cef(pdf_file_path).unwrap(),crate::include::CefPrintJobCallback::from_cef_own(callback).unwrap(),);
+  let ret = CefPrintHandler::from_cef(_self, true).get().on_print_job(crate::include::CefBrowser::from_cef_own(browser).unwrap(),&*(document_name as *const _),&*(pdf_file_path as *const _),crate::include::CefPrintJobCallback::from_cef_own(callback).unwrap(),);
   if ret { 1 } else { 0 }
 }
 #[allow(non_snake_case)]
