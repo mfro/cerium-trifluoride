@@ -3,7 +3,7 @@ import sys
 import regex
 
 from cef_parser import *
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 # cannot be loaded as a module
 if __name__ != "__main__":
@@ -15,22 +15,27 @@ disc = """
 This utility generates files for the rust to C API translation layer.
 """
 
-parser = OptionParser(description=disc)
-parser.add_option(
-    '--cef-dir',
-    dest='rootdir',
-    metavar='DIR',
-    help='CEF root directory. Can also be specified with CEF_PATH environment variable [required]')
-parser.add_option(
+parser = ArgumentParser(description=disc)
+# parser.add_argument(
+#     '--cef-dir',
+#     dest='rootdir',
+#     metavar='DIR',
+#     help='CEF root directory. Can also be specified with CEF_ROOT environment variable [required]')
+parser.add_argument(
     '--output-dir',
     dest='outputdir',
     metavar='DIR',
     help='output directory [required]')
-(options, args) = parser.parse_args()
+# parser.add_argument(
+#     '--mode',
+#     dest='mode',
+#     metavar='MODE',
+#     help='autorun mode (cef or cef-sys) [optional]')
+options = parser.parse_args()
 
 structures = set()
-classes = set()
-interfaces = set()
+classes = dict()
+interfaces = dict()
 
 cef_binding_ns = 'cef_sys'
 cef_struct_ns = 'crate::include::internal'
@@ -72,34 +77,6 @@ class writer:
       self.indent(a)
       self.do_indent = True
 
-class type_translation_context:
-  def __init__(self, extern_definition, rust_definition, convert, restore):
-    self.extern_definition = extern_definition
-    self.rust_definition = rust_definition
-    self.convert = convert
-    self.restore = restore
-
-class type_translation:
-  def __init__(self):
-    self.iface_parameter = None
-    self.iface_return = None
-    self.class_parameter = None
-    self.class_return = None
-
-  def as_iface_parameter(self, extern_definition, rust_definition, convert, restore):
-    self.iface_parameter = type_translation_context(extern_definition, rust_definition, convert, restore)
-    return self
-  def as_iface_return(self, extern_definition, rust_definition, convert, default = 'Default::default()'):
-    self.iface_return = type_translation_context(extern_definition, rust_definition, convert, restore = None)
-    self.iface_return_default = default
-    return self
-  def as_class_parameter(self, extern_definition, rust_definition, convert, restore):
-    self.class_parameter = type_translation_context(extern_definition, rust_definition, convert, restore)
-    return self
-  def as_class_return(self, extern_definition, rust_definition, convert):
-    self.class_return = type_translation_context(extern_definition, rust_definition, convert, restore = None)
-    return self
-
 class type_base:
   def __init__(self):
     self.rust_default = 'Default::default()'
@@ -108,6 +85,9 @@ class type_base:
     return None
 
   def extern_to_rust_restore(self, name):
+    return None
+
+  def extern_to_rust_generic(self):
     return None
 
   def extern_parameter_to_rust_parameter(self, name):
@@ -121,6 +101,9 @@ class type_base:
     return None
 
   def rust_to_extern_restore(self, name):
+    return None
+
+  def rust_to_extern_generic(self):
     return None
 
   def rust_parameter_to_extern_parameter(self, name):
@@ -142,8 +125,11 @@ class type_refptr(type_base):
   def extern_to_rust(self, name):
     return f'{self.rust_type}::from_cef_own({name}).unwrap()'
 
+  def rust_to_extern_generic(self):
+    return f'Into<{self.rust_type}>'
+
   def rust_to_extern(self, name):
-    return f'{self.rust_type}::to_cef_own({name})'
+    return f'{self.rust_type}::to_cef_own({name}.into())'
 
 class type_refptr_option(type_base):
   def __init__(self, raw):
@@ -172,7 +158,7 @@ class type_ref_refptr(type_base):
     self.extern_type = f'{self.inner.extern_type}'
 
   def extern_parameter_to_rust_parameter(self, name):
-    return f'&*({name} as *const _)'
+    return f'&*({name} as *const _) /* xx */'
 
   def rust_parameter_to_extern_parameter(self, name):
     return f'{name} as *const _ as *const _'
@@ -378,7 +364,7 @@ class type_mut_bool(type_base):
     self.inner = type_bool()
 
     self.rust_type = f'&mut bool'
-    self.extern_type = f'*mut i32'
+    self.extern_type = f'*mut std::os::raw::c_int'
 
   def extern_to_rust_prepare(self, name):
     return f'let mut {name}__tmp = {self.inner.extern_parameter_to_rust_parameter("*" + name)};'
@@ -403,7 +389,7 @@ class type_bool(type_base):
     super().__init__()
 
     self.rust_type = f'bool'
-    self.extern_type = f'i32'
+    self.extern_type = f'std::os::raw::c_int'
 
   def extern_to_rust(self, name):
     return f'if {name} == 0 {{ false }} else {{ true }}'
@@ -531,7 +517,6 @@ def generate_types(writer, contents):
 
       structures.add(extern_name)
 
-      # writer.write(f'simple_struct!({rust_name}, {label}, ')
       generate_comment(writer, match.captures(2))
 
       writer.write_line(f'#[repr(C)]')
@@ -616,10 +601,24 @@ def generate_static_func(writer, func):
 
   generate_comment(writer, func.get_comment())
   writer.write_line(f'#[allow(non_snake_case)]')
-  writer.write(f'pub fn {func_name}(')
+  writer.write(f'pub fn {func_name}<')
 
+  label = 0
   for (name, arg) in translations:
-    writer.write(f'{name}: {arg.rust_type}, ')
+    if not arg.rust_to_extern_generic(): continue
+    writer.write(f'T{label}: {arg.rust_to_extern_generic()}, ')
+    label += 1
+
+  writer.write(f'>(')
+
+  label = 0
+  for (name, arg) in translations:
+    writer.write(f', {name}: ')
+    if arg.rust_to_extern_generic():
+      writer.write(f'T{label}')
+      label += 1
+    else:
+      writer.write(f'{arg.rust_type}')
 
   writer.write_line(+1, f') -> {retarg.rust_type} {{')
   writer.write_line(+1, 'unsafe {')
@@ -665,7 +664,6 @@ def generate_static_func(writer, func):
 
 def generate_class(writer, cls):
   c_name = get_c_type_name(cls.get_name())
-  trait_name = cls.get_name().replace('Cef', '')
 
   writer.write_line(f'pub type {cls.get_name()} = {cef_refcounting_ns}::CefProxy<{cef_binding_ns}::{c_name}>;')
   writer.write_line(f'#[allow(non_snake_case)]')
@@ -677,17 +675,31 @@ def generate_class(writer, cls):
     except RuntimeError as e:
       print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
 
-  for func in cls.get_virtual_funcs():
-    try:
-      generate_class_func(writer, func)
-    except RuntimeError as e:
-      print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
+  node = cls
+  chain = [node]
+  while node.get_parent_name() in classes:
+    node = classes[node.get_parent_name()]
+    chain.insert(0, node)
+
+  for (depth, node) in enumerate(chain):
+    for func in node.get_virtual_funcs():
+      try:
+        generate_class_func(writer, func, len(chain) - depth - 1)
+      except RuntimeError as e:
+        print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
 
   writer.write_line(-1, f'}}')
 
+  for node in chain[:-1]:
+    writer.write_line(+1, f'impl From<{cls.get_name()}> for {cef_object_ns}::{node.get_name()} {{')
+    writer.write_line(+1, f'fn from(src: {cls.get_name()}) -> {cef_object_ns}::{node.get_name()} {{')
+    writer.write_line(f'{cef_object_ns}::{node.get_name()} {{ raw: src.raw.cast() }}')
+    writer.write_line(-1, f'}}')
+    writer.write_line(-1, f'}}')
+
   return ''
 
-def generate_class_func(writer, func):
+def generate_class_func(writer, func, inheritence_depth):
   if func.has_attrib('capi_name'):
     func_name = func.get_attrib('capi_name')
   else:
@@ -711,10 +723,25 @@ def generate_class_func(writer, func):
     retarg = translate_type(rettype, True)
 
   generate_comment(writer, func.get_comment())
-  writer.write(f'pub fn {func_name}(&mut self')
+  writer.write_line(f'#[allow(non_snake_case)]')
+  writer.write(f'pub fn {func_name}<')
 
+  label = 0
   for (name, arg) in translations:
-    writer.write(f', {name}: {arg.rust_type}')
+    if not arg.rust_to_extern_generic(): continue
+    writer.write(f'T{label}: {arg.rust_to_extern_generic()}, ')
+    label += 1
+
+  writer.write(f'>(&mut self')
+
+  label = 0
+  for (name, arg) in translations:
+    writer.write(f', {name}: ')
+    if arg.rust_to_extern_generic():
+      writer.write(f'T{label}')
+      label += 1
+    else:
+      writer.write(f'{arg.rust_type}')
 
   writer.write_line(+1, f') -> {retarg.rust_type} {{')
   writer.write_line(+1, 'unsafe {')
@@ -729,8 +756,18 @@ def generate_class_func(writer, func):
         writer.write_line(f'{mapping}')
         label += 1
 
-  writer.write_line(+1, f'let ret = match self.raw.as_ref().{func_name} {{')
-  writer.write(f'Some(f) => f(self.raw.as_ptr(),')
+  writer.write(f'let ret = match self.raw.as_ref()')
+  for _ in range(0, inheritence_depth):
+    writer.write(f'.base')
+  writer.write_line(+1, f'.{func_name} {{')
+
+  if inheritence_depth == 0:
+    writer.write(f'Some(f) => f(self.raw.as_ptr(), ')
+  else:
+    writer.write(f'Some(f) => f(&mut self.raw.as_mut()')
+    for _ in range(0, inheritence_depth):
+      writer.write(f'.base')
+    writer.write(', ')
 
   for (name, arg) in translations:
     if isinstance(arg.extern_type, str):
@@ -774,36 +811,137 @@ def generate_interface(main_writer, cls):
   trait_name = object_name.replace('Cef', '')
   c_name = get_c_type_name(object_name)
 
+  main_writer.write_line(f'pub type {object_name} = {cef_refcounting_ns}::CefObject<dyn {trait_name}, {cef_binding_ns}::{c_name}>;')
+
+  main_writer.write_line(+1, f'impl {object_name} {{')
+  main_writer.write_line(+1, f'pub unsafe fn from_cef(ptr: *mut {cef_binding_ns}::{c_name}, self_ref: bool) -> {object_name} {{')
+  main_writer.write_line(f'let shim = translate_cef_ptr!(ptr);')
+  # CEF does not increment reference counting when passing a structure to its own member function
+  # (ie for `this` pointer), so from_cef can be called with the reference already counted or not.
+  # this parameter is necessary but this solution involves double counting the `this` reference
+  # for the duration of the member function.
+  main_writer.write_line(+1, f'if self_ref {{')
+  main_writer.write_line(f'shim.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);')
+  main_writer.write_line(-1, f'}}')
+  # relies on the layout of `&dyn Trait` as described here:
+  # https://rust-lang.github.io/unsafe-code-guidelines/layout/pointers.html#notes
+  main_writer.write_line(+1, f'let fat_pointer = {cef_refcounting_ns}::DynObject {{')
+  main_writer.write_line(f'data: shim as *const _ as *const u8,')
+  main_writer.write_line(f'vtable: shim.vtable,')
+  main_writer.write_line(-1, f'}};')
+  main_writer.write_line(f'let ptr = std::mem::transmute(fat_pointer);')
+  main_writer.write_line(f'let ptr = std::ptr::NonNull::new(ptr).unwrap();')
+  main_writer.write_line(f'{object_name} {{ ptr }}')
+  main_writer.write_line(-1, f'}}')
+
+  main_writer.write_line(+1, f'pub fn new<T: {trait_name} + \'static>(value: T) -> {object_name} {{')
+  # call the init_ref_count fn to initialize the 'base' field of our struct.
+  # The 'init_ref_count' fn is preferable to initializing that field directly
+  # in this macro as that would require increasing the visibility on the extern
+  # fns at the top of this file.
+  main_writer.write_line(f'let base = {cef_refcounting_ns}::init_ref_count::<{cef_binding_ns}::{c_name}>();')
+
+  node = cls
+  chain = [node]
+  while node.get_parent_name() in interfaces:
+    node = interfaces[node.get_parent_name()]
+    chain.insert(0, node)
+
+  # Initialize the cef vtable struct inheritence chain
+  for node in chain:
+    main_writer.write_line(+1, f'let base = {cef_binding_ns}::{get_c_type_name(node.get_name())} {{')
+    main_writer.write_line(f'base,')
+
+    for func in node.get_virtual_funcs():
+      if func.has_attrib('capi_name'):
+        func_name = func.get_attrib('capi_name')
+      else:
+        func_name = get_c_func_name(func.get_name())
+
+      try:
+        generate_interface_func(writer(), writer(), func, cls, 0)
+      except RuntimeError as e:
+        main_writer.write_line(f'{func_name}: None,')
+        continue
+
+      main_writer.write_line(f'{func_name}: Some({c_name}_{func_name}),')
+
+    main_writer.write_line(-1, f'}};')
+
+  # Create the CefObject which is where we put the actual
+  # implemention, vtable, and refcount. refcount starts at
+  # 1 and is incremented whenever the CefObjectImpl is cloned or
+  # add_ref is called from CEF code.
+  #
+  # Safety here relies on CEF refcounting appropriately as well as
+  # the rust refcounting implementation.
+  main_writer.write_line(+1, f'let wrapper: Box<{cef_refcounting_ns}::CefObjectImplInner<dyn {trait_name}, {cef_binding_ns}::{c_name}>> = Box::new({cef_refcounting_ns}::CefObjectImplInner {{')
+  main_writer.write_line(f'count: std::sync::atomic::AtomicUsize::new(1),')
+  main_writer.write_line(f'raw: base,')
+  main_writer.write_line(f'vtable: std::ptr::null_mut(),')
+  main_writer.write_line(f'value: std::sync::Mutex::new(value),')
+  main_writer.write_line(-1, f'}});')
+
+  main_writer.write_line(f'let ptr = Box::into_raw(wrapper);')
+  main_writer.write_line(+1, f'unsafe {{')
+  # relies on the layout of `&dyn Trait` as described here:
+  # https://rust-lang.github.io/unsafe-code-guidelines/layout/pointers.html#notes
+  main_writer.write_line(f'let x = &ptr as *const _ as *const {cef_refcounting_ns}::DynObject;')
+  main_writer.write_line(f'(*ptr).vtable = (*x).vtable;')
+  main_writer.write_line(-1, f'}}')
+
+  # println!("create {{}}: {{:?}}", stringify!({trait_name}), ptr);
+  # leak the object from the box, we are now taking responsibility for keeping track of it.
+  main_writer.write_line(f'let ptr = std::ptr::NonNull::new(ptr).unwrap();')
+  main_writer.write_line(f'{cef_refcounting_ns}::CefObject {{ ptr }}')
+  main_writer.write_line(-1, f'}}')
+  main_writer.write_line(-1, f'}}')
+
+  main_writer.write_line(+1, f'impl<T: {trait_name} + \'static> From<T> for {object_name} {{')
+  main_writer.write_line(+1, f'fn from(src: T) -> {object_name} {{')
+  main_writer.write_line(f'{object_name}::new(src)')
+  main_writer.write_line(-1, f'}}')
+  main_writer.write_line(-1, f'}}')
+
+  unsafe_impl = writer()
+
   main_writer.write_line(f'#[allow(non_snake_case)]')
   main_writer.write_line(f'#[allow(unused_variables)]')
   main_writer.write_line(+1, f'pub trait {trait_name} {{')
 
-  for func in cls.get_static_funcs():
-    try:
-      generate_static_func(main_writer, func)
-    except RuntimeError as e:
-      print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
+  assert len(cls.get_static_funcs()) == 0
 
-  macro_impl = writer()
-  macro_impl.write(f'define_refcounted!({trait_name}, {object_name}, {c_name}, ')
+  # for func in cls.get_virtual_funcs():
+  #   try:
+  #     generate_interface_func(main_writer, unsafe_impl, func, 0)
+  #   except RuntimeError as e:
+  #     print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
 
-  unsafe_impl = writer()
+  for node in chain:
+    for func in node.get_virtual_funcs():
+      try:
+        generate_interface_func(main_writer, unsafe_impl, func, cls, 0)
+      except RuntimeError as e:
+        print(f'skipping {cls.get_name()}::{func.get_name()}: ({node.get_name()}) {e}')
 
-  for func in cls.get_virtual_funcs():
-    try:
-      generate_interface_func(main_writer, unsafe_impl, macro_impl, func)
-    except RuntimeError as e:
-      print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
+  # depth = 0
+  # node = cls
+  # while node.get_parent_name() in classes:
+  #   depth += 1
+  #   node = classes[node.get_parent_name()]
 
-  macro_impl.write_line(');')
+  #   for func in node.get_virtual_funcs():
+  #     try:
+  #       generate_interface_func(main_writer, unsafe_impl, macro_impl, func, depth)
+  #     except RuntimeError as e:
+  #       print(f'skipping {cls.get_name()}::{func.get_name()}: {e}')
 
   main_writer.write_line(-1, f'}}')
 
-  main_writer.merge(macro_impl)
   main_writer.merge(unsafe_impl)
 
-def generate_interface_func(trait_impl, unsafe_impl, macro_impl, func):
-  iface_name = get_c_type_name(func.parent.get_name())
+def generate_interface_func(trait_impl, unsafe_impl, func, cls, inheritence_depth):
+  iface_name = get_c_type_name(cls.get_name())
   if func.has_attrib('capi_name'):
     func_name = func.get_attrib('capi_name')
   else:
@@ -827,8 +965,6 @@ def generate_interface_func(trait_impl, unsafe_impl, macro_impl, func):
     retarg = type_unit()
   else:
     retarg = translate_type(rettype, True)
-
-  macro_impl.write(f'{func_name}: {iface_name}_{func_name},')
 
   generate_comment(trait_impl, func.get_comment())
   trait_impl.write(f'fn {func_name}(&mut self')
@@ -869,7 +1005,7 @@ def generate_interface_func(trait_impl, unsafe_impl, macro_impl, func):
         unsafe_impl.write_line(f'{mapping}')
         label += 1
 
-  unsafe_impl.write(f'let ret = {func.parent.get_name()}::from_cef(_self, true).get().{func_name}(')
+  unsafe_impl.write(f'let ret = {cls.get_name()}::from_cef(_self as _, true).get().{func_name}(')
 
   for (name, arg) in translations:
     if isinstance(arg.extern_type, str):
@@ -907,7 +1043,7 @@ def translate_arguments(queue, optional, func):
     return False
 
   def can_slice_index(element):
-    return element[0] == 'primitive' and element[2] in ['u64', 'i32']
+    return element[0] == 'primitive' and element[1] in ['size_t', 'int']
 
   # &mut [_] - primitive slice
   if ty[0] == 'ptr' and can_slice(ty[1]) and len(queue) > 0 and can_slice_index(queue[0]):
@@ -964,7 +1100,7 @@ def translate_type(ty, optional = False):
   # ?? &CefObject
   elif ty[0] == 'const' and ty[1][0] == 'refptr':
     # if optional: print(f'optional {ty}')
-    return type_ref_refptr(ty[1][1])
+    return type_refptr(ty[1][1])
 
   # ?? &mut CefObject
   elif ty[0] == 'rawptr':
@@ -1106,7 +1242,8 @@ def translate_type(ty, optional = False):
     # if optional: print(f'optional {ty}')
     return type_primitive(ty[2])
 
-  else: raise RuntimeError(f'unsupported type {ty}')
+  else:
+    raise RuntimeError(f'unsupported type {ty}')
 
 def parse_type(ty, typedefs = []):
   def parse_type(raw):
@@ -1115,11 +1252,14 @@ def parse_type(ty, typedefs = []):
     if raw in interfaces: return ('interface', raw)
     if raw == 'CefString': return ('string', raw)
     if raw == 'cef_string_t': return ('string', raw)
-    if raw == 'int': return ('primitive', raw, 'i32')
-    if raw == 'uint32': return ('primitive', raw, 'u32')
+    if raw == 'int': return ('primitive', raw, 'std::os::raw::c_int')
+    if raw == 'int16': return ('primitive', raw, 'i16')
+    if raw == 'int32': return ('primitive', raw, 'std::os::raw::c_int')
     if raw == 'int64': return ('primitive', raw, 'i64')
+    if raw == 'uint16': return ('primitive', raw, 'u16')
+    if raw == 'uint32': return ('primitive', raw, 'u32')
     if raw == 'uint64': return ('primitive', raw, 'u64')
-    if raw == 'size_t': return ('primitive', raw, 'u64')
+    if raw == 'size_t': return ('primitive', raw, f'{cef_binding_ns}::size_t')
     if raw == 'char16': return ('primitive', raw, 'u16')
     if raw == 'bool': return ('primitive', raw, 'bool')
     if raw == 'char': return ('primitive', raw, 'u8')
@@ -1214,7 +1354,7 @@ def get_c_func_name(name):
 def map_identifier(ident):
   if ident == 'continue': return 'cont'
   if ident == 'type': return 'type_'
-  # if ident == 'to': return 'to_'
+  if ident == 'CefUrlparts': return 'CefURLParts'
   if len(ident) > 0 and ident[0].isdigit(): return 'X' + ident
   return ident
 
@@ -1222,24 +1362,16 @@ def is_optional(arg, func):
   optional = func.get_attrib_list('optional_param')
   return optional and arg.get_name() in optional
 
-# the rootdir option is required
-if options.rootdir is None:
-  options.rootdir = os.environ.get('CEF_PATH')
-
-if options.rootdir is None:
+if options.outputdir is None:
   parser.print_help(sys.stdout)
   sys.exit()
 
-if options.outputdir is None:
-  options.outputdir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'autogen')
-
 # determine the paths
-root_dir = os.path.abspath(options.rootdir)
+root_dir = os.path.abspath(os.environ.get("CEF_ROOT"))
 cpp_header_dir = os.path.join(root_dir, 'include')
+cpp_header_views_dir = os.path.join(cpp_header_dir, 'views')
 
 output_dir = os.path.abspath(options.outputdir)
-output_include_dir = os.path.join(output_dir, 'include', 'autogen')
-output_internal_dir = os.path.join(output_dir, 'include', 'internal', 'autogen')
 
 # make sure the header directory exists
 if not os.path.exists(cpp_header_dir):
@@ -1250,56 +1382,48 @@ if not os.path.exists(cpp_header_dir):
 sys.stdout.write('Parsing C++ headers from ' + cpp_header_dir + '...\n')
 header = obj_header()
 
-if not os.path.exists(output_include_dir): os.makedirs(output_include_dir)
-if not os.path.exists(output_internal_dir): os.makedirs(output_internal_dir)
-
 # add include files to be processed
 header.set_root_directory(cpp_header_dir)
 excluded_files = ['cef_api_hash.h', 'cef_application_mac.h', 'cef_version.h']
 header.add_directory(cpp_header_dir, excluded_files)
+header.add_directory(cpp_header_views_dir)
 
-filenames = sorted(header.get_file_names())
 for cls in header.get_classes():
   if cls.get_attrib('source') == 'library':
-    classes.add(cls.get_name())
+    classes[cls.get_name()] = cls
   else:
-    interfaces.add(cls.get_name())
+    interfaces[cls.get_name()] = cls
 
-skip = set([])
-modfile = writer()
 wrapperh = writer()
-for filename in filenames:
-  if filename in skip: continue
+api_autogen = writer()
 
-  w = writer()
+for filename in sorted(header.get_file_names()):
+  modname = filename.replace('.h', '')
+  wrapperh.write_line(f'#include "include/capi/{modname}_capi.h"')
+
   for cls in header.get_classes(filename):
     if cls.get_attrib('source') == 'library':
-      generate_class(w, cls)
+      generate_class(api_autogen, cls)
     else:
-      generate_interface(w, cls)
+      generate_interface(api_autogen, cls)
 
   for func in header.get_funcs(filename):
     try:
-      generate_static_func(w, func)
+      generate_static_func(api_autogen, func)
     except RuntimeError as e:
       print(f'skipping {func.get_name()}: {e}')
-
-  modname = filename.replace('.h', '')
-  with open(os.path.join(output_include_dir, modname + '.rs'), 'w') as x:
-    x.write(w.result)
-  modfile.write_line(f'pub mod {modname};')
-  modfile.write_line(f'pub use {modname}::*;')
-  wrapperh.write_line(f'#include "include/capi/{modname}_capi.h"')
-
-with open(os.path.join(output_include_dir, 'mod.rs'), 'w') as x:
-  x.write(modfile.result)
 
 with open(os.path.join(output_dir, 'wrapper.h'), 'w') as x:
   x.write(wrapperh.result)
 
+with open(os.path.join(output_dir, 'api_autogen.rs'), 'w') as x:
+  x.write(api_autogen.result)
+
+internal_autogen = writer()
+
 with open(os.path.join(cpp_header_dir, 'internal', 'cef_types.h')) as src:
   contents = src.read()
-  w = writer()
-  generate_types(w, contents)
-  with open(os.path.join(output_internal_dir, 'cef_types.rs'), 'w') as x:
-    x.write(w.result)
+  generate_types(internal_autogen, contents)
+
+with open(os.path.join(output_dir, 'internal_autogen.rs'), 'w') as x:
+  x.write(internal_autogen.result)

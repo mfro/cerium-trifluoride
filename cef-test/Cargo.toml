@@ -8,4 +8,4 @@ edition = "2018"
 
 [dependencies]
 cef = { path = "../cef" }
-winapi = { version = "0.3.9", features = ["winuser"] }
+winapi = { version = "0.3.9", features = ["winuser", "libloaderapi"] }

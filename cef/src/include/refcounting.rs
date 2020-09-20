@@ -83,6 +83,9 @@ impl<X> CefProxy<X> {
     /// This should be used when the reference is already counted, such as
     /// when it is passed as a parameter
     pub unsafe fn from_cef_own(raw: *mut X) -> Option<CefProxy<X>> {
+        // in theory could also use mem::transmute(raw) if CefProxy is repr(C)
+        // as Option<CefProxy<X>> should have the same layout as *mut X but
+        // this is safer and clearer
         match NonNull::new(raw) {
             Some(raw) => Some(CefProxy { raw }),
             None => None,
@@ -112,7 +115,7 @@ impl<X> CefProxy<X> {
     }
 
     pub unsafe fn to_cef_ref(object: &mut CefProxy<X>) -> *mut X {
-        object.raw.as_ptr() as *const _ as *mut _
+        object.raw.as_ptr()
     }
 }
 
@@ -191,90 +194,4 @@ pub struct CefObjectImplInner<T: ?Sized, X> {
 pub struct DynObject {
     pub data: *const u8,
     pub vtable: *const u8,
-}
-
-macro_rules! define_refcounted {
-    ( $trait_name:ident, $object_name:ident, $c_name:ident, $( $method: ident: $c_method: ident, )* ) => {
-        pub type $object_name = crate::include::refcounting::CefObject<dyn $trait_name, cef_sys::$c_name>;
-
-        impl $object_name {
-            pub unsafe fn from_cef(ptr: *mut cef_sys::$c_name, self_ref: bool) -> $object_name {
-                let shim = translate_cef_ptr!(ptr);
-
-                // CEF does not increment reference counting when passing a structure to its own member function
-                // (ie for `this` pointer), so from_cef can be called with the reference already counted or not.
-                // this parameter is necessary but this solution involves double counting the `this` reference
-                // for the duration of the member function.
-                if self_ref {
-                    shim.count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                }
-
-                // relies on the layout of `&dyn Trait` as described here:
-                // https://rust-lang.github.io/unsafe-code-guidelines/layout/pointers.html#notes
-                let fat_pointer = crate::include::refcounting::DynObject {
-                    data: shim as *const _ as *const u8,
-                    vtable: shim.vtable,
-                };
-
-                let ptr = std::mem::transmute(fat_pointer);
-                let ptr = std::ptr::NonNull::new(ptr).unwrap();
-                $object_name { ptr }
-            }
-
-            pub fn new<T: $trait_name + 'static>(value: T) -> $object_name {
-                // call the init_ref_count fn to initialize the 'base' field of our struct.
-                // The 'init_ref_count' fn is preferable to initializing that field directly
-                // in this macro as that would require increasing the visibility on the extern
-                // fns at the top of this file.
-                let base = crate::include::refcounting::init_ref_count::<cef_sys::$c_name>();
-
-                // Initialize the cef vtable struct, using Default::default() to null-initialize
-                // any methods that are not implemented in rust. This reduces the amount of
-                // boilerplate needed for partially implementing a large CEF class.
-                let raw = cef_sys::$c_name {
-                    base,
-                    $( $method: Some($c_method), )*
-                    ..Default::default()
-                };
-
-                let value = std::sync::Mutex::new(value);
-
-                // Create the CefObject which is where we put the actual
-                // implemention, vtable, and refcount. refcount starts at
-                // 1 and is incremented whenever the CefObjectImpl is cloned or
-                // add_ref is called from CEF code.
-                //
-                // We can be sure that, excepting bugs in this implementation, the rust calls will
-                // all be appropriate, but we are trusting that CEF refcounts properly and doesn't
-                // cause us any memory concerns
-                let wrapper: Box<crate::include::refcounting::CefObjectImplInner<dyn $trait_name, cef_sys::$c_name>> = Box::new(crate::include::refcounting::CefObjectImplInner {
-                    count: std::sync::atomic::AtomicUsize::new(1),
-                    raw,
-                    vtable: std::ptr::null_mut(),
-                    value,
-                });
-
-                let ptr = Box::into_raw(wrapper);
-
-                unsafe {
-                    // relies on the layout of `&dyn Trait` as described here:
-                    // https://rust-lang.github.io/unsafe-code-guidelines/layout/pointers.html#notes
-                    let x = &ptr as *const _ as *const crate::include::refcounting::DynObject;
-                    (*ptr).vtable = (*x).vtable;
-                }
-
-                // println!("create {}: {:?}", stringify!($trait_name), ptr);
-
-                // leak the object from the box, we are now taking responsibility for keeping track of it.
-                let ptr = std::ptr::NonNull::new(ptr).unwrap();
-                crate::include::refcounting::CefObject { ptr }
-            }
-        }
-
-        impl<T: $trait_name + 'static> From<T> for $object_name {
-            fn from(src: T) -> $object_name {
-                $object_name::new(src)
-            }
-        }
-    };
 }

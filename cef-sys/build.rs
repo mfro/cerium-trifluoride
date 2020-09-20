@@ -1,33 +1,48 @@
-extern crate bindgen;
-
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn main() {
-    let cef_path = match std::env::var("CEF_PATH") {
-        Ok(v) => PathBuf::from(v),
-        Err(_) => {
-            std::env::current_dir()
-            .unwrap()
-            .join("../cef_binary_85.3.1+g1306235+chromium-85.0.4183.83_windows64")
-        }
-    };
+    println!("cargo:rerun-if-changed=../tools/make_rust_wrapper.py");
+    println!("cargo:rerun-if-env-changed=CEF_ROOT");
 
-    println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=wrapper.h");
+    let cef_path = std::env::var("CEF_ROOT")
+        .expect("environment variable CEF_ROOT must be set to the target CEF distribution");
+
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let header_path = out_path.join("wrapper.h");
+
+    let result = Command::new("python")
+        .arg("../tools/make_rust_wrapper.py")
+        .arg("--output-dir")
+        .arg(&out_path)
+        .output()
+        .unwrap();
+
+    if !result.status.success() {
+        println!("{}", String::from_utf8_lossy(&result.stdout));
+        println!("{}", String::from_utf8_lossy(&result.stderr));
+        panic!("exit status: {}", result.status)
+    }
+
+    assert!(header_path.exists());
+
     println!("cargo:rustc-link-lib=dylib={}", "libcef");
     println!(
         "cargo:rustc-link-search=native={}",
-        cef_path.join("Release").to_str().unwrap()
+        AsRef::<Path>::as_ref(&cef_path)
+            .join("Release")
+            .to_str()
+            .unwrap()
     );
 
     let bindings = bindgen::Builder::default()
-        .header("wrapper.h")
+        .header(header_path.to_str().unwrap())
         .derive_default(true)
-        .generate_comments(true)
+        .generate_comments(false)
         .whitelist_type("cef_.*")
         .whitelist_function("cef_.*")
-        .clang_arg(format!("-I{}", cef_path.to_str().unwrap()))
+        .clang_arg(format!("-I{}", &cef_path))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -37,7 +52,6 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
