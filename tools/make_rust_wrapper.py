@@ -613,12 +613,12 @@ def generate_static_func(writer, func):
 
   label = 0
   for (name, arg) in translations:
-    writer.write(f', {name}: ')
+    writer.write(f'{name}: ')
     if arg.rust_to_extern_generic():
-      writer.write(f'T{label}')
+      writer.write(f'T{label}, ')
       label += 1
     else:
-      writer.write(f'{arg.rust_type}')
+      writer.write(f'{arg.rust_type}, ')
 
   writer.write_line(+1, f') -> {retarg.rust_type} {{')
   writer.write_line(+1, 'unsafe {')
