@@ -122,3 +122,17 @@ impl From<&String> for CefString {
         CefString::new(raw)
     }
 }
+
+// can't implement generically for AsRef<&'str> without specialization
+// https://github.com/rust-lang/rust/issues/31844
+impl From<&str> for CefStringUserFree {
+    fn from(raw: &str) -> CefStringUserFree {
+        CefStringUserFree::new(raw)
+    }
+}
+
+impl From<&String> for CefStringUserFree {
+    fn from(raw: &String) -> CefStringUserFree {
+        CefStringUserFree::new(raw)
+    }
+}

@@ -10,7 +10,7 @@ pub struct CefMainArgs {
 }
 
 impl CefMainArgs {
-    pub unsafe fn new(instance: *mut cef_sys::HINSTANCE__) -> CefMainArgs {
+    pub fn new(instance: *mut cef_sys::HINSTANCE__) -> CefMainArgs {
         let raw = cef_sys::cef_main_args_t { instance };
         CefMainArgs { raw }
     }

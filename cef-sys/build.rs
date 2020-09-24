@@ -1,51 +1,69 @@
 use std::env;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
-fn main() {
-    println!("cargo:rerun-if-changed=../tools/make_rust_wrapper.py");
-    println!("cargo:rerun-if-env-changed=CEF_ROOT");
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufWriter;
 
-    let cef_path = std::env::var("CEF_ROOT")
-        .expect("environment variable CEF_ROOT must be set to the target CEF distribution");
-
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let header_path = out_path.join("wrapper.h");
-
-    let result = Command::new("python")
-        .arg("../tools/make_rust_wrapper.py")
-        .arg("--output-dir")
-        .arg(&out_path)
-        .output()
-        .unwrap();
-
-    if !result.status.success() {
-        println!("{}", String::from_utf8_lossy(&result.stdout));
-        println!("{}", String::from_utf8_lossy(&result.stderr));
-        panic!("exit status: {}", result.status)
+fn find_all_headers<P1: AsRef<Path>, P2: AsRef<Path>>(
+    path: P1,
+    prefix: P2,
+    headers: &mut Vec<PathBuf>,
+) -> std::io::Result<()> {
+    for entry in path.as_ref().read_dir()? {
+        let entry = entry?;
+        if entry.file_type()?.is_file() {
+            headers.push(prefix.as_ref().join(entry.file_name()));
+        }
     }
 
-    assert!(header_path.exists());
+    Ok(())
+}
+
+fn main() {
+    // println!("cargo:rerun-if-env-changed=CEF_ROOT");
+
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let out_path: &Path = out_dir.as_ref();
+    let wrapper_path = out_path.join("wrapper.h");
+
+    let cef_root = std::env::var("CEF_ROOT")
+        .expect("environment variable CEF_ROOT must be set to the target CEF distribution");
+
+    let cef_path: &Path = cef_root.as_ref();
+    let mut capi_header_paths = vec![];
+    find_all_headers(
+        &cef_path.join("include/capi"),
+        "include/capi",
+        &mut capi_header_paths,
+    )
+    .unwrap();
+    find_all_headers(
+        cef_path.join("include/capi/views"),
+        "include/capi/views",
+        &mut capi_header_paths,
+    )
+    .unwrap();
+
+    let mut wrapper = BufWriter::new(File::create(&wrapper_path).unwrap());
+    for path in &capi_header_paths {
+        write!(wrapper, "#include \"{}\"\n", &path.to_str().unwrap()).unwrap();
+    }
+    drop(wrapper);
 
     println!("cargo:rustc-link-lib=dylib={}", "libcef");
     println!(
         "cargo:rustc-link-search=native={}",
-        AsRef::<Path>::as_ref(&cef_path)
-            .join("Release")
-            .to_str()
-            .unwrap()
+        cef_path.join("Release").to_str().unwrap()
     );
 
     let bindings = bindgen::Builder::default()
-        .header(header_path.to_str().unwrap())
+        .header(wrapper_path.to_str().unwrap())
         .derive_default(true)
         .generate_comments(false)
         .whitelist_type("cef_.*")
         .whitelist_function("cef_.*")
-        .clang_arg(format!("-I{}", &cef_path))
-        // Tell cargo to invalidate the built crate whenever any of the
-        // included header files changed.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .clang_arg(format!("-I{}", &cef_root))
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.

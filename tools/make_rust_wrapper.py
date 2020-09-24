@@ -158,7 +158,7 @@ class type_ref_refptr(type_base):
     self.extern_type = f'{self.inner.extern_type}'
 
   def extern_parameter_to_rust_parameter(self, name):
-    return f'&*({name} as *const _) /* xx */'
+    return f'&*({name} as *const _)'
 
   def rust_parameter_to_extern_parameter(self, name):
     return f'{name} as *const _ as *const _'
@@ -167,7 +167,7 @@ class type_mut_refptr(type_base):
   def __init__(self, raw):
     super().__init__()
 
-    self.inner = type_refptr(raw)
+    self.inner = type_refptr_option(raw)
 
     self.rust_type = f'&mut {self.inner.rust_type}'
     self.extern_type = f'*mut {self.inner.extern_type}'
@@ -182,7 +182,7 @@ class type_mut_refptr(type_base):
     return f'&mut {name}__tmp'
 
   def rust_to_extern_prepare(self, name):
-    return f'let mut {name}__tmp = {self.inner.rust_type}::to_cef_ref({name});'
+    return f'let mut {name}__tmp = {self.inner.inner.rust_type}::to_cef_ref({name});'
 
   def rust_to_extern_restore(self, name):
     return f'*{name} = {self.inner.extern_parameter_to_rust_parameter(name + "__tmp")};'
@@ -293,7 +293,7 @@ class type_ref_list(type_base):
   def __init__(self, inner, size, size_first):
     super().__init__()
 
-    if not isinstance(inner, type_primitive) and not isinstance(inner, type_struct):
+    if not type(inner) in [type_primitive, type_struct, type_refptr]:
       raise RuntimeError(f'lists are not supported: {inner.rust_type} {inner.extern_type}')
 
     self.inner = inner
@@ -309,10 +309,16 @@ class type_ref_list(type_base):
     if size_first: self.extern_type.reverse()
 
   def extern_to_rust(self, name):
-    return f'std::slice::from_raw_parts({name[0]} as *const _, {name[1]} as _)'
+    if self.size_first:
+      ptr = name[1]
+      size = name[0]
+    else:
+      ptr = name[0]
+      size = name[1]
+    return f'std::slice::from_raw_parts({ptr} as *const {self.rust_type[2:-1]}, {size} as usize)'
 
   def rust_to_extern(self, name):
-    v = [f'{name}.as_ptr() as *const _', f'{name}.len() as _']
+    v = [f'{name}.as_ptr() as *const {self.inner.extern_type}', f'{name}.len() as {self.size.rust_type}']
     if self.size_first: v.reverse()
     return v
 
@@ -320,7 +326,7 @@ class type_mut_list(type_base):
   def __init__(self, inner, size, size_first):
     super().__init__()
 
-    if not isinstance(inner, type_primitive) and not isinstance(inner, type_struct):
+    if not type(inner) in [type_primitive, type_struct, type_refptr]:
       raise RuntimeError(f'lists are not supported: {inner.rust_type} {inner.extern_type}')
 
     self.inner = inner
@@ -337,10 +343,16 @@ class type_mut_list(type_base):
     if size_first: self.extern_type.reverse()
 
   def extern_to_rust(self, name):
-    return f'std::slice::from_raw_parts_mut({name[0]} as *mut _, {name[1]} as _)'
+    if self.size_first:
+      ptr = name[1]
+      size = name[0]
+    else:
+      ptr = name[0]
+      size = name[1]
+    return f'std::slice::from_raw_parts_mut({ptr} as *mut {self.rust_type[6:-1]}, {size} as usize)'
 
   def rust_to_extern(self, name):
-    v = [f'{name}.as_mut_ptr() as *mut _', f'{name}.len() as _']
+    v = [f'{name}.as_mut_ptr() as *mut {self.inner.extern_type}', f'{name}.len() as {self.size.rust_type}']
     if self.size_first: v.reverse()
     return v
 
@@ -732,7 +744,7 @@ def generate_class_func(writer, func, inheritence_depth):
     writer.write(f'T{label}: {arg.rust_to_extern_generic()}, ')
     label += 1
 
-  writer.write(f'>(&mut self')
+  writer.write(f'>(&self')
 
   label = 0
   for (name, arg) in translations:
@@ -764,10 +776,10 @@ def generate_class_func(writer, func, inheritence_depth):
   if inheritence_depth == 0:
     writer.write(f'Some(f) => f(self.raw.as_ptr(), ')
   else:
-    writer.write(f'Some(f) => f(&mut self.raw.as_mut()')
+    writer.write(f'Some(f) => f(&self.raw.as_ref()')
     for _ in range(0, inheritence_depth):
       writer.write(f'.base')
-    writer.write(', ')
+    writer.write(' as *const _ as *mut _, ')
 
   for (name, arg) in translations:
     if isinstance(arg.extern_type, str):
@@ -1394,12 +1406,10 @@ for cls in header.get_classes():
   else:
     interfaces[cls.get_name()] = cls
 
-wrapperh = writer()
 api_autogen = writer()
 
 for filename in sorted(header.get_file_names()):
   modname = filename.replace('.h', '')
-  wrapperh.write_line(f'#include "include/capi/{modname}_capi.h"')
 
   for cls in header.get_classes(filename):
     if cls.get_attrib('source') == 'library':
@@ -1412,9 +1422,6 @@ for filename in sorted(header.get_file_names()):
       generate_static_func(api_autogen, func)
     except RuntimeError as e:
       print(f'skipping {func.get_name()}: {e}')
-
-with open(os.path.join(output_dir, 'wrapper.h'), 'w') as x:
-  x.write(wrapperh.result)
 
 with open(os.path.join(output_dir, 'api_autogen.rs'), 'w') as x:
   x.write(api_autogen.result)

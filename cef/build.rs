@@ -4,7 +4,7 @@ use std::process::Command;
 
 fn main() {
     println!("cargo:rerun-if-changed=../tools/make_rust_wrapper.py");
-    println!("cargo:rerun-if-env-changed=CEF_ROOT");
+    // println!("cargo:rerun-if-env-changed=CEF_ROOT");
 
     std::env::var("CEF_ROOT")
         .expect("environment variable CEF_ROOT must be set to the target CEF distribution");

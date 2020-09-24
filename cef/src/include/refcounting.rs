@@ -114,8 +114,11 @@ impl<X> CefProxy<X> {
         ptr
     }
 
-    pub unsafe fn to_cef_ref(object: &mut CefProxy<X>) -> *mut X {
-        object.raw.as_ptr()
+    pub unsafe fn to_cef_ref(object: &mut Option<CefProxy<X>>) -> *mut X {
+        match object {
+            Some(p) => p.raw.as_ptr(),
+            None => std::ptr::null_mut()
+        }
     }
 }
 
