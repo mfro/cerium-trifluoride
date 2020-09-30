@@ -10,7 +10,7 @@ pub struct CefString {
 }
 
 pub struct CefStringUserFree {
-    raw: NonNull<cef_string_t>,
+    raw: Option<NonNull<cef_string_t>>,
 }
 
 impl CefString {
@@ -24,16 +24,14 @@ impl CefString {
 impl CefStringUserFree {
     pub fn new(value: &str) -> CefStringUserFree {
         let raw = unsafe { cef_string_userfree_utf16_alloc() };
-        let mut raw = NonNull::new(raw).unwrap();
-        unsafe { crate::include::helpers::str_to_cef_string(raw.as_mut(), value) };
+        let raw = NonNull::new(raw);
+        unsafe { crate::include::helpers::str_to_cef_string(raw.unwrap().as_mut(), value) };
         CefStringUserFree { raw }
     }
 
-    pub unsafe fn from_cef(raw: *const cef_string_t) -> Option<CefStringUserFree> {
-        match NonNull::new(raw as *mut _) {
-            Some(raw) => Some(CefStringUserFree { raw }),
-            None => None,
-        }
+    pub unsafe fn from_cef(raw: *mut cef_string_t) -> CefStringUserFree {
+        let raw = NonNull::new(raw);
+        CefStringUserFree { raw }
     }
 }
 
@@ -60,7 +58,9 @@ impl Drop for CefString {
 impl Drop for CefStringUserFree {
     fn drop(&mut self) {
         unsafe {
-            cef_string_userfree_utf16_free(self.raw.as_ptr());
+            if let Some(ptr) = self.raw {
+                cef_string_userfree_utf16_free(ptr.as_ptr());
+            }
         }
     }
 }
@@ -94,15 +94,20 @@ impl Debug for CefStringUserFree {
 
 impl Display for CefStringUserFree {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        let slice = unsafe {
-            std::slice::from_raw_parts(self.raw.as_ref().str_, self.raw.as_ref().length as usize)
-        };
+        match self.raw {
+            Some(raw) => {
+                let slice = unsafe {
+                    std::slice::from_raw_parts(raw.as_ref().str_, raw.as_ref().length as usize)
+                };
 
-        for x in decode_utf16(slice.iter().cloned()) {
-            match x {
-                Ok(c) => f.write_char(c)?,
-                Err(_) => return Err(std::fmt::Error),
+                for x in decode_utf16(slice.iter().cloned()) {
+                    match x {
+                        Ok(c) => f.write_char(c)?,
+                        Err(_) => return Err(std::fmt::Error),
+                    }
+                }
             }
+            None => (),
         }
 
         Ok(())

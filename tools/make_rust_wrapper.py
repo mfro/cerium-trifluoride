@@ -213,7 +213,7 @@ class type_string_userfree(type_base):
     self.extern_type = f'*mut {cef_binding_ns}::cef_string_t'
 
   def extern_return_to_rust_return(self, name):
-    return f'{cef_struct_ns}::CefStringUserFree::from_cef({name}).unwrap()'
+    return f'{cef_struct_ns}::CefStringUserFree::from_cef({name})'
 
 class type_struct(type_base):
   def __init__(self, raw_name):
