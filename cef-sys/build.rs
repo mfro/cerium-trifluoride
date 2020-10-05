@@ -45,11 +45,12 @@ fn main() {
     )
     .unwrap();
 
-    let mut wrapper = BufWriter::new(File::create(&wrapper_path).unwrap());
-    for path in &capi_header_paths {
-        write!(wrapper, "#include \"{}\"\n", &path.to_str().unwrap()).unwrap();
+    {
+        let mut wrapper = BufWriter::new(File::create(&wrapper_path).unwrap());
+        for path in &capi_header_paths {
+            writeln!(wrapper, "#include \"{}\"", &path.to_str().unwrap()).unwrap();
+        }
     }
-    drop(wrapper);
 
     println!("cargo:rustc-link-lib=dylib={}", "libcef");
     println!(
@@ -62,7 +63,11 @@ fn main() {
         .derive_default(true)
         .generate_comments(false)
         .whitelist_type("cef_.*")
+        .whitelist_var("cef_.*")
         .whitelist_function("cef_.*")
+        .whitelist_type("CEF_.*")
+        .whitelist_var("CEF_.*")
+        .whitelist_function("CEF_.*")
         .clang_arg(format!("-I{}", &cef_root))
         // Finish the builder and generate the bindings.
         .generate()
@@ -73,4 +78,23 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+
+    // let bindings = bindings.to_string();
+
+    // let utf8 = bindings.contains("CEF_STRING_TYPE_UTF8");
+    // let utf16 = bindings.contains("CEF_STRING_TYPE_UTF16");
+    // let wide = bindings.contains("CEF_STRING_TYPE_WIDE");
+
+    // if utf8 {
+    //     assert!(!utf16 && !wide, "invalid CEF_STRING_TYPE configuration");
+    //     println!("cargo:rustc-cfg=cef_string_type_utf8");
+    // } else if utf16 {
+    //     assert!(!utf8 && !wide, "invalid CEF_STRING_TYPE configuration");
+    //     println!("cargo:rustc-cfg=cef_string_type_utf16");
+    // } else if wide {
+    //     assert!(!utf8 && !utf16, "invalid CEF_STRING_TYPE configuration");
+    //     println!("cargo:rustc-cfg=cef_string_type_utfwide");
+    // } else {
+    //     panic!("invalid CEF_STRING_TYPE configuration");
+    // }
 }

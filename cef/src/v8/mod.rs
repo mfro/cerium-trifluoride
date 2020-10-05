@@ -52,6 +52,18 @@ impl From<&str> for CefV8Value {
     }
 }
 
+impl From<&String> for CefV8Value {
+    fn from(v: &String) -> Self {
+        v.as_str().into()
+    }
+}
+
+impl From<String> for CefV8Value {
+    fn from(v: String) -> Self {
+        v.as_str().into()
+    }
+}
+
 impl TryFrom<CefV8Value> for String {
     type Error = CefV8Value;
 
@@ -241,10 +253,16 @@ v8_function!(v8_function4, V8F4, A0, A1, A2, A3);
 v8_function!(v8_function5, V8F5, A0, A1, A2, A3, A4);
 v8_function!(v8_function6, V8F6, A0, A1, A2, A3, A4, A5);
 
-pub fn v8_array<I: ExactSizeIterator<Item = CefV8Value>>(src: I) -> CefV8Value {
+impl<T: Into<CefV8Value>> From<Vec<T>> for CefV8Value {
+    fn from(v: Vec<T>) -> Self {
+        v8_array(v.into_iter())
+    }
+}
+
+pub fn v8_array<T: Into<CefV8Value>, I: ExactSizeIterator<Item = T>>(src: I) -> CefV8Value {
     let l = CefV8Value::create_array(src.len() as i32).unwrap();
     for (i, value) in src.enumerate() {
-        l.set_value_byindex(i as i32, value.clone());
+        l.set_value_byindex(i as i32, value.into());
     }
     l
 }

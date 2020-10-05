@@ -1,7 +1,6 @@
-use cef_sys::{cef_string_t, cef_string_userfree_utf16_alloc, cef_string_userfree_utf16_free};
+use cef_sys::cef_string_t;
 
-use std::char::decode_utf16;
-use std::fmt::{Debug, Display, Formatter, Write};
+use std::fmt::{Debug, Display, Formatter};
 use std::ptr::NonNull;
 
 #[repr(C)]
@@ -22,8 +21,17 @@ impl CefString {
 }
 
 impl CefStringUserFree {
+    #[cfg(cef_string_type_utf8)]
     pub fn new(value: &str) -> CefStringUserFree {
-        let raw = unsafe { cef_string_userfree_utf16_alloc() };
+        let raw = unsafe { cef_sys::cef_string_userfree_utf8_alloc() };
+        let raw = NonNull::new(raw);
+        unsafe { crate::include::helpers::str_to_cef_string(raw.unwrap().as_mut(), value) };
+        CefStringUserFree { raw }
+    }
+
+    #[cfg(cef_string_type_utf16)]
+    pub fn new(value: &str) -> CefStringUserFree {
+        let raw = unsafe { cef_sys::cef_string_userfree_utf16_alloc() };
         let raw = NonNull::new(raw);
         unsafe { crate::include::helpers::str_to_cef_string(raw.unwrap().as_mut(), value) };
         CefStringUserFree { raw }
@@ -56,10 +64,20 @@ impl Drop for CefString {
 }
 
 impl Drop for CefStringUserFree {
+    #[cfg(cef_string_type_utf8)]
     fn drop(&mut self) {
         unsafe {
             if let Some(ptr) = self.raw {
-                cef_string_userfree_utf16_free(ptr.as_ptr());
+                cef_sys::cef_string_userfree_utf8_free(ptr.as_ptr());
+            }
+        }
+    }
+
+    #[cfg(cef_string_type_utf16)]
+    fn drop(&mut self) {
+        unsafe {
+            if let Some(ptr) = self.raw {
+                cef_sys::cef_string_userfree_utf16_free(ptr.as_ptr());
             }
         }
     }
@@ -73,16 +91,8 @@ impl Debug for CefString {
 
 impl Display for CefString {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        let slice = unsafe { std::slice::from_raw_parts(self.raw.str_, self.raw.length as usize) };
-
-        for x in decode_utf16(slice.iter().cloned()) {
-            match x {
-                Ok(c) => f.write_char(c)?,
-                Err(_) => return Err(std::fmt::Error),
-            }
-        }
-
-        Ok(())
+        let value = crate::include::helpers::cef_string_to_string(&self.raw);
+        f.write_str(&value)
     }
 }
 
@@ -96,21 +106,11 @@ impl Display for CefStringUserFree {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self.raw {
             Some(raw) => {
-                let slice = unsafe {
-                    std::slice::from_raw_parts(raw.as_ref().str_, raw.as_ref().length as usize)
-                };
-
-                for x in decode_utf16(slice.iter().cloned()) {
-                    match x {
-                        Ok(c) => f.write_char(c)?,
-                        Err(_) => return Err(std::fmt::Error),
-                    }
-                }
+                let value = crate::include::helpers::cef_string_to_string(unsafe { raw.as_ref() });
+                f.write_str(&value)
             }
-            None => (),
+            None => Ok(()),
         }
-
-        Ok(())
     }
 }
 
