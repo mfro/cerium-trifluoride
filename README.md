@@ -1,6 +1,6 @@
 ## Rust CEF bindings
 
-Rust language bindings and minimal wrapper around the CEF C API. The goal of this library is to enable use of CEF without directly using unsafe or extern code and no more.
+Rust language bindings and minimal wrapper around the CEF C API. The goal of this library is to enable use of CEF without directly using unsafe or extern code and no more. It is very far away from achieving that goal, but it does make use of CEF possible and easier in simple cases.
 
 ### Repository Layout
 
